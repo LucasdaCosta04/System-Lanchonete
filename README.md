@@ -1,9 +1,5 @@
 # 🍔 Sistema de Gestão de Lanchonetes
 
-[![CI](https://github.com/ORGANIZACAO/REPOSITORIO/actions/workflows/ci.yml/badge.svg)](https://github.com/ORGANIZACAO/REPOSITORIO/actions/workflows/ci.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=PROJECT_KEY&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=PROJECT_KEY)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=PROJECT_KEY&metric=coverage)](https://sonarcloud.io/summary/new_code?id=PROJECT_KEY)
-
 Sistema para gerenciar a operação de uma lanchonete: cadastro de produtos, pedidos, controle de estoque, clientes, funcionários e relatórios.
 
 Projeto desenvolvido para a **A3 da unidade curricular Gestão e Qualidade de Software**, UNISUL, sob orientação do professor Jorge Werner.
@@ -240,13 +236,11 @@ fix(cliente): validar CPF com dígitos repetidos
 
 | Nome | Papel | Módulo | GitHub |
 |---|---|---|---|
-| _Nome 1_ | Líder de equipe | Pedidos | [@usuario](https://github.com/usuario) |
-| _Nome 2_ | Especialista em DevOps | Estoque | [@usuario](https://github.com/usuario) |
-| _Nome 3_ | Testador | Produtos | [@usuario](https://github.com/usuario) |
-| _Nome 4_ | Desenvolvedor | Clientes | [@usuario](https://github.com/usuario) |
-| _Nome 5_ | Desenvolvedor | Funcionários e Login | [@usuario](https://github.com/usuario) |
+| _Lucas da Costa_ | Líder de equipe | Pedidos | [@LucasdaCosta04](https://github.com/LucasdaCosta04) |
+| _Carlos Henrique Lohn_ | Desenvolvedor | Clientes | [@carloshlohn](https://github.com/carloshlohn) |
+| _Murilo dos Santos Ferreira_ | Desenvolvedor | Funcionários e Login | [@MuriloS-Ferreira](https://github.com/MuriloS-Ferreira) |
 
-**Curso:** _Nome do curso_ · **Semestre:** _X_ · **Professor:** Jorge Werner
+**Curso:** _Ciência da Computação_ · **Semestre:** _6_ · **Professor:** Jorge Werner
 
 ## 📄 Licença
 
