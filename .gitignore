@@ -1,0 +1,21 @@
+# Maven
+target/
+
+# Java
+*.class
+*.log
+*.jar
+*.war
+hs_err_pid*
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Variáveis de ambiente (segredos)
+.env
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

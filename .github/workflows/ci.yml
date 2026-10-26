@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v5
+
+      - name: Configurar Java 21 (Temurin)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Compilar, testar e gerar cobertura
+        run: mvn -B verify
+
+      - name: Publicar relatório do JaCoCo
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: jacoco-report
+          path: target/site/jacoco
+          if-no-files-found: warn
