@@ -334,4 +334,25 @@ class ClienteServiceTest {
         verify(repository).salvar(captor.capture());
         assertEquals(OUTRO_CPF_VALIDO, captor.getValue().getCpf());
     }
+
+    // Testes do método excluir
+
+    @Test
+    void deveExcluirClienteExistente() {
+        clienteExistenteNoRepositorio();
+
+        service.excluir(1L);
+
+        verify(repository, times(1)).excluir(1L);
+    }
+
+    @Test
+    void deveLancarExcecaoAoExcluirIdInexistente() {
+        when(repository.buscarPorId(99L)).thenReturn(Optional.empty());
+
+        assertThrows(ClienteNaoEncontradoException.class,
+                () -> service.excluir(99L));
+
+        verify(repository, never()).excluir(any());
+    }
 }
