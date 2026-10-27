@@ -67,10 +67,28 @@
                 <version>3.13.0</version>
             </plugin>
 
+            <!-- Expõe o caminho de cada dependência como propriedade (ex.: ${org.mockito:mockito-core:jar}) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.8.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Mockito como Java agent; @{argLine} preserva o agente do JaCoCo -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
+                <configuration>
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+                </configuration>
             </plugin>
 
             <!-- Cobertura de testes: relatório em target/site/jacoco/index.html -->
