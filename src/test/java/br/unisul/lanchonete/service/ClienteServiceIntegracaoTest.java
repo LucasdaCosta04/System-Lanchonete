@@ -1,5 +1,6 @@
 package br.unisul.lanchonete.service;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -33,6 +34,9 @@ class ClienteServiceIntegracaoTest {
     private static final String OUTRO_CPF_VALIDO = "98765432100";
     private static final String TELEFONE = "(48) 99999-0000";
     private static final String OUTRO_TELEFONE = "(48) 98888-0000";
+    // CPF fictício calculado a partir da base 111444777.
+    private static final String TERCEIRO_CPF_VALIDO = "11144477735";
+    private static final String TERCEIRO_TELEFONE = "(48) 97777-0000";
 
     private ClienteRepositoryEmMemoria repository;
     private ClienteService service;
@@ -191,6 +195,62 @@ class ClienteServiceIntegracaoTest {
         List<Cliente> clientes = service.listarTodos();
         assertEquals(1, clientes.size());
         assertEquals(salvo.getId(), clientes.get(0).getId());
+    }
+
+    @Test
+    @DisplayName("Ciclo completo: cadastrar, listar, buscar, atualizar, excluir e reaproveitar o CPF liberado")
+    void deveExecutarCicloCompletoDoCliente() {
+        // Passo 1: cadastra três clientes, o primeiro com CPF pontuado.
+        Cliente maria = service.cadastrar(new Cliente("Maria Silva", CPF_VALIDO_COM_PONTUACAO, TELEFONE));
+        Cliente joao = service.cadastrar(new Cliente("João Souza", OUTRO_CPF_VALIDO, OUTRO_TELEFONE));
+        Cliente ana = service.cadastrar(new Cliente("Ana Lima", TERCEIRO_CPF_VALIDO, TERCEIRO_TELEFONE));
+
+        // Passo 2: a listagem traz os três, na ordem em que foram cadastrados.
+        List<Cliente> todos = service.listarTodos();
+        assertAll(
+                () -> assertEquals(3, todos.size()),
+                () -> assertEquals(maria.getId(), todos.get(0).getId()),
+                () -> assertEquals(joao.getId(), todos.get(1).getId()),
+                () -> assertEquals(ana.getId(), todos.get(2).getId()));
+
+        // Passo 3: busca a Maria pelo CPF com pontuação; o CPF foi salvo só com dígitos.
+        Cliente encontradaPorCpf = service.buscarPorCpf(CPF_VALIDO_COM_PONTUACAO);
+        assertAll(
+                () -> assertEquals(maria.getId(), encontradaPorCpf.getId()),
+                () -> assertEquals("Maria Silva", encontradaPorCpf.getNome()),
+                () -> assertEquals(CPF_VALIDO, encontradaPorCpf.getCpf()),
+                () -> assertEquals(TELEFONE, encontradaPorCpf.getTelefone()));
+
+        // Passo 4: atualiza o telefone da Maria e confere pela busca por id.
+        String novoTelefone = "(48) 96666-0000";
+        service.atualizar(maria.getId(), new Cliente("Maria Silva", CPF_VALIDO, novoTelefone));
+        Cliente atualizada = service.buscarPorId(maria.getId());
+        assertAll(
+                () -> assertEquals("Maria Silva", atualizada.getNome()),
+                () -> assertEquals(CPF_VALIDO, atualizada.getCpf()),
+                () -> assertEquals(novoTelefone, atualizada.getTelefone()));
+
+        // Passo 5: exclui o João; restam a Maria e a Ana.
+        service.excluir(joao.getId());
+        List<Cliente> aposExclusao = service.listarTodos();
+        assertAll(
+                () -> assertEquals(2, aposExclusao.size()),
+                () -> assertThrows(ClienteNaoEncontradoException.class, () -> service.buscarPorId(joao.getId())),
+                () -> assertEquals(maria.getId(), aposExclusao.get(0).getId()),
+                () -> assertEquals(ana.getId(), aposExclusao.get(1).getId()));
+
+        // Passo 6: um novo cliente com o CPF da Ana é recusado; continuam dois clientes.
+        Cliente comCpfDaAna = new Cliente("Carlos Pereira", TERCEIRO_CPF_VALIDO, TELEFONE);
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class, () -> service.cadastrar(comCpfDaAna)),
+                () -> assertEquals(2, service.listarTodos().size()));
+
+        // Passo 7: o CPF do João ficou livre, então um novo cadastro com ele é aceito; voltam a ser três.
+        Cliente novoComCpfDoJoao = service.cadastrar(new Cliente("Beatriz Costa", OUTRO_CPF_VALIDO, OUTRO_TELEFONE));
+        assertAll(
+                () -> assertNotEquals(joao.getId(), novoComCpfDoJoao.getId()),
+                () -> assertEquals(novoComCpfDoJoao.getId(), service.buscarPorCpf(OUTRO_CPF_VALIDO).getId()),
+                () -> assertEquals(3, service.listarTodos().size()));
     }
 
     static Stream<Cliente> clientesInvalidos() {
