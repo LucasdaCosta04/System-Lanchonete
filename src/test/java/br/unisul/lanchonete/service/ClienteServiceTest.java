@@ -9,6 +9,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -107,5 +109,44 @@ class ClienteServiceTest {
 
         assertEquals("O telefone do cliente é obrigatório.", erro.getMessage());
         verify(repository, never()).salvar(any());
+    }
+
+    @Test
+    void deveRejeitarCpfJaCadastrado() {
+        Cliente existente = new Cliente("João Souza", CPF_VALIDO, TELEFONE);
+        existente.setId(1L);
+        when(repository.buscarPorCpf(CPF_VALIDO)).thenReturn(Optional.of(existente));
+        Cliente cliente = new Cliente("Maria Silva", CPF_VALIDO, TELEFONE);
+
+        IllegalArgumentException erro = assertThrows(IllegalArgumentException.class,
+                () -> service.cadastrar(cliente));
+
+        assertEquals("Já existe um cliente cadastrado com este CPF", erro.getMessage());
+        verify(repository, never()).salvar(any());
+    }
+
+    @Test
+    void deveConsultarCpfDuplicadoApenasComDigitos() {
+        Cliente cliente = new Cliente("Maria Silva", CPF_VALIDO_COM_PONTUACAO, TELEFONE);
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+
+        service.cadastrar(cliente);
+
+        verify(repository).buscarPorCpf(captor.capture());
+        assertEquals(CPF_VALIDO, captor.getValue());
+    }
+
+    @Test
+    void deveCadastrarQuandoCpfNaoExiste() {
+        Cliente cliente = new Cliente("Maria Silva", CPF_VALIDO, TELEFONE);
+        Cliente salvo = new Cliente("Maria Silva", CPF_VALIDO, TELEFONE);
+        salvo.setId(1L);
+        when(repository.buscarPorCpf(CPF_VALIDO)).thenReturn(Optional.empty());
+        when(repository.salvar(cliente)).thenReturn(salvo);
+
+        Cliente resultado = service.cadastrar(cliente);
+
+        assertSame(salvo, resultado);
+        verify(repository, times(1)).salvar(cliente);
     }
 }
