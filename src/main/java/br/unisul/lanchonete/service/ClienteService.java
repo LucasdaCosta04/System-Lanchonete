@@ -100,6 +100,19 @@ public class ClienteService {
         return repository.salvar(existente);
     }
 
+    /**
+     * Exclui um cliente existente.
+     *
+     * @param id id do cliente a ser excluído
+     * @throws ClienteNaoEncontradoException se não existir cliente com o id
+     */
+    public void excluir(Long id) {
+        // Garante que o cliente existe antes de excluir.
+        buscarPorId(id);
+
+        repository.excluir(id);
+    }
+
     // Deixa o CPF só com dígitos, sem pontos e traço. CPF nulo vira texto vazio.
     private String normalizarCpf(String cpf) {
         return cpf == null ? "" : cpf.replaceAll("\\D", "");
