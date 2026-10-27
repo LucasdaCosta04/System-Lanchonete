@@ -27,7 +27,7 @@ public class ClienteService {
         validar(cliente);
 
         // Guarda o CPF só com dígitos, sem pontos e traço.
-        cliente.setCpf(cliente.getCpf().replaceAll("\\D", ""));
+        cliente.setCpf(normalizarCpf(cliente.getCpf()));
 
         if (repository.buscarPorCpf(cliente.getCpf()).isPresent()) {
             throw new IllegalArgumentException("Já existe um cliente cadastrado com este CPF");
@@ -56,7 +56,7 @@ public class ClienteService {
      * @throws ClienteNaoEncontradoException se não existir cliente com o CPF
      */
     public Cliente buscarPorCpf(String cpf) {
-        String numeros = cpf == null ? "" : cpf.replaceAll("\\D", "");
+        String numeros = normalizarCpf(cpf);
 
         return repository.buscarPorCpf(numeros)
                 .orElseThrow(() -> new ClienteNaoEncontradoException("Cliente não encontrado: CPF " + numeros));
@@ -69,6 +69,53 @@ public class ClienteService {
      */
     public List<Cliente> listarTodos() {
         return repository.listarTodos();
+    }
+
+    /**
+     * Atualiza o nome, o CPF e o telefone de um cliente existente.
+     *
+     * @param id    id do cliente a ser atualizado
+     * @param dados novos dados do cliente
+     * @return o cliente atualizado
+     * @throws ClienteNaoEncontradoException se não existir cliente com o id
+     * @throws IllegalArgumentException      se algum dado for inválido ou se o CPF pertencer a outro cliente
+     */
+    public Cliente atualizar(Long id, Cliente dados) {
+        Cliente existente = buscarPorId(id);
+        validar(dados);
+
+        String cpf = normalizarCpf(dados.getCpf());
+
+        // O CPF só pode ser usado se estiver livre ou se já for do próprio cliente.
+        repository.buscarPorCpf(cpf).ifPresent(outro -> {
+            if (!outro.getId().equals(existente.getId())) {
+                throw new IllegalArgumentException("Já existe um cliente cadastrado com este CPF");
+            }
+        });
+
+        existente.setNome(dados.getNome());
+        existente.setCpf(cpf);
+        existente.setTelefone(dados.getTelefone());
+
+        return repository.salvar(existente);
+    }
+
+    /**
+     * Exclui um cliente existente.
+     *
+     * @param id id do cliente a ser excluído
+     * @throws ClienteNaoEncontradoException se não existir cliente com o id
+     */
+    public void excluir(Long id) {
+        // Garante que o cliente existe antes de excluir.
+        buscarPorId(id);
+
+        repository.excluir(id);
+    }
+
+    // Deixa o CPF só com dígitos, sem pontos e traço. CPF nulo vira texto vazio.
+    private String normalizarCpf(String cpf) {
+        return cpf == null ? "" : cpf.replaceAll("\\D", "");
     }
 
     private void validar(Cliente cliente) {
