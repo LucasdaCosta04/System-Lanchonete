@@ -21,6 +21,7 @@ Projeto desenvolvido para a **A3 da unidade curricular Gestão e Qualidade de So
 - [Integração contínua](#-integração-contínua)
 - [Convenção de commits](#-convenção-de-commits)
 - [Fluxo de trabalho com Git](#-fluxo-de-trabalho-com-git)
+- [Contribuições](#-contribuições)
 - [Equipe](#-equipe)
 - [Licença](#-licença)
 
@@ -348,6 +349,29 @@ fix(cliente): validar CPF com dígitos repetidos
 - Trabalho em branches curtas: `feat/nome-da-feature`, `fix/nome-do-bug`
 - Integração via Pull Request com pelo menos uma revisão
 - Issues abertas pelo professor são prioridade e devem ser resolvidas antes da entrega
+
+## 📊 Contribuições
+
+| Aluno | Funcionalidade | Teste(s) unitário(s) |
+|---|---|---|
+| Carlos Henrique Lohn | Classe principal da aplicação | [`AppTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/AppTest.java) |
+| Carlos Henrique Lohn | Entidade Cliente | Sem teste dedicado; usada em [`ClienteRepositoryEmMemoriaTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/repository/ClienteRepositoryEmMemoriaTest.java) e [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
+| Carlos Henrique Lohn | Validação de CPF | [`CpfValidatorTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/CpfValidatorTest.java) |
+| Carlos Henrique Lohn | Repositório de clientes em memória | [`ClienteRepositoryEmMemoriaTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/repository/ClienteRepositoryEmMemoriaTest.java) |
+| Carlos Henrique Lohn | Cadastro de cliente com validações e bloqueio de CPF duplicado | [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
+| Carlos Henrique Lohn | Consulta de cliente por id e por CPF e listagem | [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
+| Lucas da Costa | Pedidos | Em desenvolvimento |
+| Murilo dos Santos Ferreira | Funcionários e Login | Em desenvolvimento |
+
+### Commits por integrante
+
+| Aluno | Commits de código-fonte | Principais commits |
+|---|---|---|
+| Carlos Henrique Lohn | 13 | [`97ff666`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/97ff66691358fd1dd6735c014b0fcfa4d9aa4c34) entidade Cliente · [`c06a33a`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/c06a33a41d125cbb38c5c1677f2b1d10950bfdb3) validação de CPF · [`f75f94b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f75f94b565a474e58e55ec2e69e82891a5bcb158) repositório em memória · [`e3aaf31`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/e3aaf314eafd422a6c9bf9dd6d4adbb8fb76b664) cadastro com validações · [`11b1414`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/11b14142cdb581c42c16bd38b8992cb94ef3d6f3) bloqueio de CPF duplicado · [`dc7b364`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/dc7b3644668b51f80e6fffd0b183091952c645f1) consultas de cliente |
+| Lucas da Costa | Em desenvolvimento | Em desenvolvimento |
+| Murilo dos Santos Ferreira | Em desenvolvimento | Em desenvolvimento |
+
+> As tabelas são atualizadas a cada entrega. Só são considerados commits que alteram código-fonte (`src/`) na branch `main`.
 
 ## 👨‍💻 Equipe
 
