@@ -46,7 +46,7 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 | ID | Requisito | Status |
 |---|---|---|
 | RF01 | Cadastrar, consultar, atualizar e excluir produtos | ⏳ Planejado |
-| RF02 | Cadastrar, consultar, atualizar e excluir clientes | 🟡 Parcial (cadastro e consulta prontos; atualização e exclusão pendentes) |
+| RF02 | Cadastrar, consultar, atualizar e excluir clientes | ✅ Implementado |
 | RF03 | Criar pedidos com um ou mais itens e acompanhar o status | ⏳ Planejado |
 | RF04 | Cancelar pedidos | ⏳ Planejado |
 | RF05 | Controlar entradas e saídas de estoque | ⏳ Planejado |
