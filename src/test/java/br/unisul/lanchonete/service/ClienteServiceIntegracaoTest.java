@@ -105,6 +105,94 @@ class ClienteServiceIntegracaoTest {
         assertThrows(ClienteNaoEncontradoException.class, () -> service.buscarPorId(99L));
     }
 
+    @Test
+    void deveAtualizarNomeETelefoneSemCriarOutroCliente() {
+        Cliente salvo = service.cadastrar(new Cliente("Maria Silva", CPF_VALIDO, TELEFONE));
+
+        service.atualizar(salvo.getId(), new Cliente("Maria Souza", CPF_VALIDO, OUTRO_TELEFONE));
+
+        Cliente encontrado = service.buscarPorId(salvo.getId());
+        assertEquals("Maria Souza", encontrado.getNome());
+        assertEquals(CPF_VALIDO, encontrado.getCpf());
+        assertEquals(OUTRO_TELEFONE, encontrado.getTelefone());
+        assertEquals(1, service.listarTodos().size());
+    }
+
+    @Test
+    void deveAtualizarCpfEEncontrarSoPeloCpfNovo() {
+        Cliente salvo = service.cadastrar(new Cliente("Maria Silva", CPF_VALIDO, TELEFONE));
+
+        service.atualizar(salvo.getId(), new Cliente("Maria Silva", OUTRO_CPF_VALIDO, TELEFONE));
+
+        assertEquals(salvo.getId(), service.buscarPorCpf(OUTRO_CPF_VALIDO).getId());
+        assertThrows(ClienteNaoEncontradoException.class, () -> service.buscarPorCpf(CPF_VALIDO));
+    }
+
+    @Test
+    void naoDeveAtualizarClienteComCpfDeOutroCliente() {
+        Cliente maria = service.cadastrar(new Cliente("Maria Silva", CPF_VALIDO, TELEFONE));
+        service.cadastrar(new Cliente("João Souza", OUTRO_CPF_VALIDO, OUTRO_TELEFONE));
+        Cliente dados = new Cliente("Maria Souza", OUTRO_CPF_VALIDO, OUTRO_TELEFONE);
+
+        assertThrows(IllegalArgumentException.class, () -> service.atualizar(maria.getId(), dados));
+
+        Cliente encontrado = service.buscarPorId(maria.getId());
+        assertEquals("Maria Silva", encontrado.getNome());
+        assertEquals(CPF_VALIDO, encontrado.getCpf());
+        assertEquals(TELEFONE, encontrado.getTelefone());
+    }
+
+    @ParameterizedTest
+    @MethodSource("clientesInvalidos")
+    void atualizacaoInvalidaNaoDeveAlterarClienteSalvo(Cliente invalido) {
+        Cliente salvo = service.cadastrar(new Cliente("Maria Silva", OUTRO_CPF_VALIDO, OUTRO_TELEFONE));
+
+        assertThrows(IllegalArgumentException.class, () -> service.atualizar(salvo.getId(), invalido));
+
+        Cliente encontrado = service.buscarPorId(salvo.getId());
+        assertEquals("Maria Silva", encontrado.getNome());
+        assertEquals(OUTRO_CPF_VALIDO, encontrado.getCpf());
+        assertEquals(OUTRO_TELEFONE, encontrado.getTelefone());
+    }
+
+    @Test
+    void excluirClienteDeveRemoverDoRepositorio() {
+        Cliente salvo = service.cadastrar(new Cliente("Maria Silva", CPF_VALIDO, TELEFONE));
+
+        service.excluir(salvo.getId());
+
+        assertThrows(ClienteNaoEncontradoException.class, () -> service.buscarPorId(salvo.getId()));
+        assertTrue(service.listarTodos().stream().noneMatch(c -> c.getId().equals(salvo.getId())));
+    }
+
+    @Test
+    void excluirUmClienteNaoDeveAfetarOOutro() {
+        Cliente maria = service.cadastrar(new Cliente("Maria Silva", CPF_VALIDO, TELEFONE));
+        Cliente joao = service.cadastrar(new Cliente("João Souza", OUTRO_CPF_VALIDO, OUTRO_TELEFONE));
+
+        service.excluir(maria.getId());
+
+        List<Cliente> clientes = service.listarTodos();
+        assertEquals(1, clientes.size());
+        assertEquals(joao.getId(), clientes.get(0).getId());
+
+        Cliente encontrado = service.buscarPorId(joao.getId());
+        assertEquals("João Souza", encontrado.getNome());
+        assertEquals(OUTRO_CPF_VALIDO, encontrado.getCpf());
+        assertEquals(OUTRO_TELEFONE, encontrado.getTelefone());
+    }
+
+    @Test
+    void excluirIdInexistenteDeveLancarExcecaoSemRemoverNada() {
+        Cliente salvo = service.cadastrar(new Cliente("Maria Silva", CPF_VALIDO, TELEFONE));
+
+        assertThrows(ClienteNaoEncontradoException.class, () -> service.excluir(99L));
+
+        List<Cliente> clientes = service.listarTodos();
+        assertEquals(1, clientes.size());
+        assertEquals(salvo.getId(), clientes.get(0).getId());
+    }
+
     static Stream<Cliente> clientesInvalidos() {
         return Stream.of(
                 new Cliente(" ", CPF_VALIDO, TELEFONE),
