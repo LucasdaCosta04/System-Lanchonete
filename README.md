@@ -137,26 +137,27 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 ### Pré-requisitos
 
 - JDK 21+
-- Maven 3.9+
+- Maven 3.9 ou superior
 - Git
 
 ### Passo a passo
 
 ```bash
 # 1. Clonar o repositório
-git clone https://github.com/ORGANIZACAO/REPOSITORIO.git
-cd REPOSITORIO
+git clone https://github.com/LucasdaCosta04/System-Lanchonete.git
+cd System-Lanchonete
 
-# 2. Compilar e baixar dependências
+# 2. Compilar, baixar dependências e rodar os testes
 mvn clean install
-
-# 3. Executar a aplicação
-mvn exec:java
 ```
+
+> **Observação:** a execução do fluxo de pedidos pela linha de comando está planejada e ainda não está disponível.
 
 ### Variáveis de ambiente
 
-Copie `.env.example` para `.env` e ajuste os valores. **Nunca** versione credenciais.
+O arquivo `.env.example` já existe no repositório, mas essas variáveis só serão usadas quando o projeto tiver banco de dados. Hoje a persistência é em memória, então não é preciso configurá-las para compilar ou testar.
+
+Quando houver banco, copie `.env.example` para `.env` e ajuste os valores. **Nunca** versione credenciais.
 
 | Variável | Descrição |
 |---|---|
