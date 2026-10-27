@@ -263,6 +263,44 @@ mvn verify
 
 **Metas:** cobertura ≥ 75% · Quality Gate aprovado · zero issues abertos.
 
+### Análise estática e Quality Gate (planejado)
+
+**Ferramenta:** SonarCloud, integrado ao Maven e ao GitHub Actions.
+
+**Passos de integração**
+
+1. *(planejado)* Criar a organização no SonarCloud a partir do GitHub e importar o repositório.
+2. *(planejado)* Gerar o token e cadastrá-lo como secret `SONAR_TOKEN` no repositório.
+3. *(planejado)* Configurar no `pom.xml` as propriedades `sonar.organization`, `sonar.projectKey` e o caminho do relatório XML do JaCoCo (`sonar.coverage.jacoco.xmlReportPaths`).
+4. *(planejado)* Adicionar ao workflow uma etapa que roda `mvn verify sonar:sonar` após os testes.
+5. *(planejado)* Desativar a "Automatic Analysis" do SonarCloud para usar a análise via CI.
+
+**Quality Gate:** usar o padrão "Sonar way", que avalia o código novo:
+
+- cobertura mínima de 80%;
+- no máximo 3% de linhas duplicadas;
+- nota A em confiabilidade, segurança e manutenibilidade;
+- 100% dos security hotspots revisados.
+
+**Meta da equipe:** cobertura geral de 80% ou mais, acima dos 75% exigidos na A3.
+
+**Métricas acompanhadas:** segurança, confiabilidade, manutenibilidade, duplicações e complexidade.
+
+**Processo de correção**
+
+- A primeira análise completa gera o registro "antes" (print do painel e lista de issues).
+- Cada issue é corrigida em um commit próprio (`fix:` ou `refactor:`), referenciando a regra do Sonar.
+- O problema encontrado e a solução aplicada são registrados no relatório da A3 (item 2.12).
+- Ao final, é feito um novo registro "depois", com o Quality Gate aprovado.
+
+**Cronograma**
+
+| Etapa | Período |
+|---|---|
+| Integração do SonarCloud | até 02/11 |
+| Primeira análise e registro "antes" | 03/11 a 09/11 |
+| Correção dos issues e registro "depois" | 10/11 a 16/11 |
+
 ## ⚙️ Integração contínua
 
 A cada `push` e `pull request` para a `main`, o GitHub Actions:
