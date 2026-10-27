@@ -1,5 +1,7 @@
 package br.unisul.lanchonete.service;
 
+import java.util.List;
+
 import br.unisul.lanchonete.model.Cliente;
 import br.unisul.lanchonete.repository.ClienteRepository;
 
@@ -32,6 +34,41 @@ public class ClienteService {
         }
 
         return repository.salvar(cliente);
+    }
+
+    /**
+     * Busca um cliente pelo id.
+     *
+     * @param id id do cliente
+     * @return o cliente encontrado
+     * @throws ClienteNaoEncontradoException se não existir cliente com o id
+     */
+    public Cliente buscarPorId(Long id) {
+        return repository.buscarPorId(id)
+                .orElseThrow(() -> new ClienteNaoEncontradoException("Cliente não encontrado: id " + id));
+    }
+
+    /**
+     * Busca um cliente pelo CPF, aceitando com ou sem pontos e traço.
+     *
+     * @param cpf CPF do cliente
+     * @return o cliente encontrado
+     * @throws ClienteNaoEncontradoException se não existir cliente com o CPF
+     */
+    public Cliente buscarPorCpf(String cpf) {
+        String numeros = cpf == null ? "" : cpf.replaceAll("\\D", "");
+
+        return repository.buscarPorCpf(numeros)
+                .orElseThrow(() -> new ClienteNaoEncontradoException("Cliente não encontrado: CPF " + numeros));
+    }
+
+    /**
+     * Lista todos os clientes cadastrados.
+     *
+     * @return lista de clientes, vazia se não houver nenhum
+     */
+    public List<Cliente> listarTodos() {
+        return repository.listarTodos();
     }
 
     private void validar(Cliente cliente) {
