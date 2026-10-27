@@ -100,6 +100,60 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 - [ ] Valor total do pedido é igual à soma de `quantidade × preço unitário` dos itens.
 - [ ] Login com credenciais inválidas é negado.
 
+### Regras de cancelamento e reposição de estoque
+
+**Status do pedido**
+
+```
+ABERTO     ──confirmar──▶ CONFIRMADO
+ABERTO     ──cancelar───▶ CANCELADO
+CONFIRMADO ──cancelar───▶ CANCELADO
+```
+
+| Status atual | Ação | Novo status | Efeito no estoque |
+|---|---|---|---|
+| ABERTO | Confirmar (com estoque suficiente) | CONFIRMADO | Baixa em todos os itens |
+| ABERTO | Confirmar (com estoque insuficiente) | ABERTO | Nenhum |
+| ABERTO | Cancelar | CANCELADO | Nenhum |
+| CONFIRMADO | Cancelar | CANCELADO | Quantidades devolvidas ao estoque |
+| CANCELADO | Cancelar | — (erro) | Nenhum |
+
+**Confirmação**
+
+- O sistema verifica o estoque de **todos** os itens antes de dar qualquer baixa.
+- Se algum item não tiver estoque suficiente, o pedido inteiro é recusado, nenhuma baixa é feita e o pedido continua ABERTO. A mensagem informa qual produto está sem estoque.
+- Se todos os itens tiverem estoque, a baixa é feita em todos eles e o status passa para CONFIRMADO.
+
+**Cancelamento**
+
+- Pedido ABERTO cancelado: o estoque não muda, porque nada foi baixado.
+- Pedido CONFIRMADO cancelado: as quantidades de todos os itens voltam ao estoque.
+- Pedido já CANCELADO não pode ser cancelado de novo; o sistema retorna um erro com mensagem clara.
+- Cancelamento após o pagamento (estorno) está fora do escopo atual e será tratado junto com o RF08.
+
+**Reposição de estoque**
+
+- Feita pelo gerente, por meio de uma entrada de estoque.
+- A quantidade deve ser maior que zero e o produto deve existir.
+- O registro histórico de cada movimentação (entrada/saída) está planejado.
+
+**Regra x teste**
+
+| Regra | Teste previsto |
+|---|---|
+| Confirmação com estoque suficiente dá baixa em todos os itens | `deveConfirmarPedidoEDarBaixaEmTodosOsItensQuandoHouverEstoque` |
+| Confirmação com estoque insuficiente recusa o pedido sem baixa parcial | `deveRecusarPedidoSemBaixaParcialQuandoEstoqueInsuficiente` |
+| Pedido recusado continua ABERTO | `deveManterPedidoAbertoQuandoConfirmacaoForRecusada` |
+| Mensagem de recusa informa o produto sem estoque | `deveInformarProdutoSemEstoqueNaMensagemDeErro` |
+| Cancelar pedido ABERTO não altera o estoque | `naoDeveAlterarEstoqueAoCancelarPedidoAberto` |
+| Cancelar pedido CONFIRMADO devolve os itens ao estoque | `deveDevolverItensAoEstoqueAoCancelarPedidoConfirmado` |
+| Pedido CANCELADO não pode ser cancelado de novo | `deveLancarErroAoCancelarPedidoJaCancelado` |
+| Reposição com quantidade maior que zero aumenta o estoque | `deveReporEstoqueQuandoQuantidadeForPositiva` |
+| Reposição com quantidade zero ou negativa é recusada | `deveRecusarReposicaoComQuantidadeMenorOuIgualAZero` |
+| Reposição de produto inexistente é recusada | `deveRecusarReposicaoDeProdutoInexistente` |
+
+> As regras acima estão definidas; a implementação está em andamento no módulo de Pedidos.
+
 ## 🛠 Tecnologias
 
 | Camada | Tecnologia | Versão | Status |
