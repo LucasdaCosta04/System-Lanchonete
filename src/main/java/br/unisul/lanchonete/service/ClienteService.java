@@ -27,6 +27,10 @@ public class ClienteService {
         // Guarda o CPF só com dígitos, sem pontos e traço.
         cliente.setCpf(cliente.getCpf().replaceAll("\\D", ""));
 
+        if (repository.buscarPorCpf(cliente.getCpf()).isPresent()) {
+            throw new IllegalArgumentException("Já existe um cliente cadastrado com este CPF");
+        }
+
         return repository.salvar(cliente);
     }
 
