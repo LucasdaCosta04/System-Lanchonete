@@ -102,18 +102,21 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 
 ## 🛠 Tecnologias
 
-> ⚠️ Stack sujeita à confirmação com o professor.
+| Camada | Tecnologia | Versão | Status |
+|---|---|---|---|
+| Linguagem | Java | 21 | ✅ Em uso |
+| Build | Maven (maven-compiler-plugin / maven-surefire-plugin) | 3.13.0 / 3.5.2 | ✅ Em uso |
+| Testes | JUnit Jupiter | 5.11.4 | ✅ Em uso |
+| Testes | Mockito (mockito-junit-jupiter) | 5.14.2 | ✅ Em uso |
+| Cobertura | JaCoCo | 0.8.12 | ✅ Em uso |
+| CI | GitHub Actions (`actions/checkout`, `actions/setup-java` com Temurin 21, `actions/upload-artifact`) | v5 / v5 / v5 | ✅ Em uso |
+| Persistência | Repositórios em memória | — | ✅ Em uso |
+| Persistência | Banco de dados relacional | — | ⏳ Planejado |
+| Testes | H2 (dependência de teste no `pom.xml`, ainda não usada nos testes) | 2.3.232 | ⏳ Planejado |
+| Análise estática | SonarCloud | — | ⏳ Planejado |
+| Prototipação | Figma (protótipo de interface) | — | ⏳ Planejado |
 
-| Camada | Tecnologia |
-|---|---|
-| Linguagem | Java 21 |
-| Build | Maven |
-| Testes | JUnit 5, Mockito |
-| Cobertura | JaCoCo |
-| Análise estática | SonarCloud |
-| CI | GitHub Actions |
-| Banco de dados | H2 (testes) / PostgreSQL ou SQLite (execução) |
-| Prototipação | Figma |
+A stack foi definida pela equipe; a escolha do banco de dados será registrada aqui quando a persistência for implementada.
 
 ## 📁 Estrutura do repositório
 
