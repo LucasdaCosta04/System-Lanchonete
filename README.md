@@ -11,6 +11,7 @@ Projeto desenvolvido para a **A3 da unidade curricular Gestão e Qualidade de So
 - [Problema atendido](#-problema-atendido)
 - [Atores](#-atores)
 - [Requisitos](#-requisitos)
+- [Situação atual](#-situação-atual)
 - [Fluxo principal e critérios de aceitação](#-fluxo-principal-e-critérios-de-aceitação)
 - [Tecnologias](#-tecnologias)
 - [Estrutura do repositório](#-estrutura-do-repositório)
@@ -41,17 +42,17 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 
 ### Funcionais
 
-| ID | Requisito |
-|---|---|
-| RF01 | Cadastrar, consultar, atualizar e excluir produtos |
-| RF02 | Cadastrar, consultar, atualizar e excluir clientes |
-| RF03 | Criar pedidos com um ou mais itens e acompanhar o status |
-| RF04 | Cancelar pedidos |
-| RF05 | Controlar entradas e saídas de estoque |
-| RF06 | Dar baixa automática no estoque ao confirmar um pedido |
-| RF07 | Autenticar funcionários por login e senha |
-| RF08 | Registrar o pagamento do pedido |
-| RF09 | Gerar relatórios de vendas e de estoque |
+| ID | Requisito | Status |
+|---|---|---|
+| RF01 | Cadastrar, consultar, atualizar e excluir produtos | ⏳ Planejado |
+| RF02 | Cadastrar, consultar, atualizar e excluir clientes | 🟡 Parcial (cadastro e consulta prontos; atualização e exclusão pendentes) |
+| RF03 | Criar pedidos com um ou mais itens e acompanhar o status | ⏳ Planejado |
+| RF04 | Cancelar pedidos | ⏳ Planejado |
+| RF05 | Controlar entradas e saídas de estoque | ⏳ Planejado |
+| RF06 | Dar baixa automática no estoque ao confirmar um pedido | ⏳ Planejado |
+| RF07 | Autenticar funcionários por login e senha | ⏳ Planejado |
+| RF08 | Registrar o pagamento do pedido | ⏳ Planejado |
+| RF09 | Gerar relatórios de vendas e de estoque | ⏳ Planejado |
 
 ### Não funcionais
 
@@ -66,6 +67,26 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 ### Regra de negócio validada por testes
 
 > Ao confirmar um pedido, o sistema deve dar baixa no estoque de cada item. Se algum produto não tiver estoque suficiente, o pedido é rejeitado e nenhuma baixa é feita.
+
+## 📌 Situação atual
+
+**Implementado**
+
+- Build com Maven e Java 21 (`pom.xml`)
+- Testes unitários com JUnit 5 e Mockito
+- Relatório de cobertura com JaCoCo, gerado no `mvn verify`
+- CI no GitHub Actions: compila, testa, gera a cobertura e publica o relatório do JaCoCo
+- Módulo Clientes: entidade, repositório em memória, validação de CPF, cadastro com validação de campos e bloqueio de CPF duplicado, consulta por id e por CPF e listagem
+
+**Planejado**
+
+- Análise no SonarCloud e Quality Gate
+- Banco de dados e testes de integração com H2
+- Interface e camada de entrada (`controller/`), incluindo a execução pela linha de comando
+- Atualização e exclusão de clientes
+- Módulos de Produtos, Estoque, Pedidos, Pagamento, Funcionários (login) e Relatórios
+- Documentação em `docs/` (UML, BPM e plano de testes)
+- Dockerfile
 
 ## 🔄 Fluxo principal e critérios de aceitação
 
@@ -100,19 +121,19 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 .
 ├── .github/
 │   └── workflows/
-│       └── ci.yml            # Pipeline: build, testes, cobertura e Sonar
-├── docs/
-│   ├── uml/                  # Casos de uso, classes e sequência
-│   ├── bpm/                  # Fluxo de pedidos e estoque
-│   └── plano-de-testes/      # Plano de testes e evidências
+│       └── ci.yml            # Pipeline: build, testes e cobertura (Sonar: planejado)
+├── docs/                     # planejado
+│   ├── uml/                  # planejado: casos de uso, classes e sequência
+│   ├── bpm/                  # planejado: fluxo de pedidos e estoque
+│   └── plano-de-testes/      # planejado: plano de testes e evidências
 ├── src/
 │   ├── main/java/            # Código-fonte
 │   │   ├── model/            # Entidades
 │   │   ├── repository/       # Acesso a dados
 │   │   ├── service/          # Regras de negócio
-│   │   └── controller/       # Camada de entrada
-│   ├── main/resources/       # Configurações e scripts SQL
-│   └── test/java/            # Testes unitários e de integração
+│   │   └── controller/       # planejado: camada de entrada
+│   ├── main/resources/       # planejado: configurações e scripts SQL
+│   └── test/java/            # Testes unitários (integração: planejado)
 ├── .gitignore
 ├── LICENSE
 ├── pom.xml
@@ -192,7 +213,7 @@ A cada `push` e `pull request` para a `main`, o GitHub Actions:
 1. Compila o projeto
 2. Executa os testes unitários
 3. Gera o relatório de cobertura (JaCoCo)
-4. Envia a análise ao SonarCloud e valida o Quality Gate
+4. Envia a análise ao SonarCloud e valida o Quality Gate *(planejado)*
 
 ## ✍️ Convenção de commits
 
