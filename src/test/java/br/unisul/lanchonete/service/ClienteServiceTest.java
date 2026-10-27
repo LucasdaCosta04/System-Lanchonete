@@ -3,12 +3,14 @@ package br.unisul.lanchonete.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -148,5 +150,68 @@ class ClienteServiceTest {
 
         assertSame(salvo, resultado);
         verify(repository, times(1)).salvar(cliente);
+    }
+
+    @Test
+    void deveBuscarClienteExistentePorId() {
+        Cliente existente = new Cliente("Maria Silva", CPF_VALIDO, TELEFONE);
+        existente.setId(1L);
+        when(repository.buscarPorId(1L)).thenReturn(Optional.of(existente));
+
+        Cliente resultado = service.buscarPorId(1L);
+
+        assertSame(existente, resultado);
+    }
+
+    @Test
+    void deveLancarExcecaoAoBuscarIdInexistente() {
+        when(repository.buscarPorId(99L)).thenReturn(Optional.empty());
+
+        ClienteNaoEncontradoException erro = assertThrows(ClienteNaoEncontradoException.class,
+                () -> service.buscarPorId(99L));
+
+        assertTrue(erro.getMessage().contains("99"));
+    }
+
+    @Test
+    void deveBuscarPorCpfComPontuacaoUsandoApenasDigitos() {
+        Cliente existente = new Cliente("Maria Silva", CPF_VALIDO, TELEFONE);
+        existente.setId(1L);
+        when(repository.buscarPorCpf(CPF_VALIDO)).thenReturn(Optional.of(existente));
+
+        Cliente resultado = service.buscarPorCpf(CPF_VALIDO_COM_PONTUACAO);
+
+        assertSame(existente, resultado);
+        verify(repository).buscarPorCpf(CPF_VALIDO);
+    }
+
+    @Test
+    void deveLancarExcecaoAoBuscarCpfInexistente() {
+        when(repository.buscarPorCpf(CPF_VALIDO)).thenReturn(Optional.empty());
+
+        assertThrows(ClienteNaoEncontradoException.class,
+                () -> service.buscarPorCpf(CPF_VALIDO));
+    }
+
+    @Test
+    void deveRetornarListaVaziaQuandoNaoHaClientes() {
+        when(repository.listarTodos()).thenReturn(List.of());
+
+        List<Cliente> resultado = service.listarTodos();
+
+        assertTrue(resultado.isEmpty());
+    }
+
+    @Test
+    void deveListarTodosOsClientesDoRepositorio() {
+        Cliente maria = new Cliente("Maria Silva", CPF_VALIDO, TELEFONE);
+        maria.setId(1L);
+        Cliente joao = new Cliente("João Souza", "98765432100", TELEFONE);
+        joao.setId(2L);
+        when(repository.listarTodos()).thenReturn(List.of(maria, joao));
+
+        List<Cliente> resultado = service.listarTodos();
+
+        assertEquals(List.of(maria, joao), resultado);
     }
 }
