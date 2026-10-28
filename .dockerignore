@@ -1,0 +1,27 @@
+# Saída de build (o Maven recompila dentro da imagem)
+target/
+
+# Controle de versão e CI
+.git/
+.github/
+
+# Configurações de IDE
+.vscode/
+.idea/
+*.iml
+
+# Variáveis de ambiente e segredos locais
+.env
+
+# Documentação (não usada em tempo de execução)
+CLAUDE.md
+README.md
+LICENSE
+docs/
+
+# Logs
+*.log
+
+# Arquivos do próprio Docker (não são necessários dentro da imagem)
+Dockerfile
+docker-compose.yml
