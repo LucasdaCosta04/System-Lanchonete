@@ -207,14 +207,16 @@ A stack foi definida pela equipe; a escolha do banco de dados será registrada a
 
 | Entidade | Atributos principais |
 |---|---|
-| **Produtos** | id, nome, categoria, preço, estoque |
+| **Produtos** | id, nome, categoria, preço, quantidadeEstoque (saldo atual do produto) |
 | **Clientes** | id, nome, cpf, telefone |
 | **Funcionários** | id, nome, cargo, login, senha (hash) |
 | **Pedidos** | id, id_cliente, valor_total, status |
 | **Itens_Pedido** | id, id_pedido, id_produto, quantidade, preço_unitário |
-| **Estoque** | id, id_produto, quantidade_entrada, quantidade_saída |
+| **Estoque** (histórico de movimentações de entrada e saída) *(planejado)* | id, id_produto, quantidade_entrada, quantidade_saída |
 
-**Relacionamentos:** um cliente tem vários pedidos; um pedido tem vários itens; cada item referencia um produto; cada movimentação de estoque referencia um produto.
+> **Observação:** na versão atual, o saldo é controlado diretamente em `Produto.quantidadeEstoque` pelo `EstoqueService` (verificar, dar baixa e repor). O registro histórico de cada movimentação será implementado depois.
+
+**Relacionamentos:** um cliente tem vários pedidos; um pedido tem vários itens; cada item referencia um produto; quando o histórico for implementado, cada movimentação de estoque referenciará um produto.
 
 ## 🚀 Como executar
 
