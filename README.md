@@ -162,9 +162,11 @@ CONFIRMADO ──cancelar───▶ CANCELADO
 |---|---|---|---|
 | Linguagem | Java | 21 | ✅ Em uso |
 | Build | Maven (maven-compiler-plugin / maven-surefire-plugin) | 3.13.0 / 3.5.2 | ✅ Em uso |
+| Build | maven-dependency-plugin (carrega o Mockito como agente Java nos testes) | 3.8.1 | ✅ Em uso |
+| Build | maven-jar-plugin (gera o jar executável `sistema-lanchonete.jar`) | 3.4.2 | ✅ Em uso |
 | Testes | JUnit Jupiter | 5.11.4 | ✅ Em uso |
 | Testes | Mockito (mockito-junit-jupiter) | 5.14.2 | ✅ Em uso |
-| Cobertura | JaCoCo | 0.8.12 | ✅ Em uso |
+| Cobertura | JaCoCo (relatório de cobertura e verificação mínima de 75% de linhas no build) | 0.8.12 | ✅ Em uso |
 | CI | GitHub Actions (`actions/checkout`, `actions/setup-java` com Temurin 21, `actions/upload-artifact`) | v5 / v5 / v5 | ✅ Em uso |
 | Contêiner | Docker (multi-stage: `maven:3.9-eclipse-temurin-21` no build e `eclipse-temurin:21-jre` na execução) | — | ✅ Em uso |
 | Persistência | Repositórios em memória | — | ✅ Em uso |
@@ -187,14 +189,21 @@ A stack foi definida pela equipe; a escolha do banco de dados será registrada a
 │   ├── bpm/                  # planejado: fluxo de pedidos e estoque
 │   └── plano-de-testes/      # planejado: plano de testes e evidências
 ├── src/
-│   ├── main/java/            # Código-fonte
-│   │   ├── model/            # Entidades
-│   │   ├── repository/       # Acesso a dados
-│   │   ├── service/          # Regras de negócio
-│   │   └── controller/       # planejado: camada de entrada
-│   ├── main/resources/       # planejado: configurações e scripts SQL
-│   └── test/java/            # Testes unitários e de integração
+│   ├── main/
+│   │   ├── java/br/unisul/lanchonete/   # Código-fonte
+│   │   │   ├── App.java                 # Classe principal
+│   │   │   ├── model/                   # Entidades
+│   │   │   ├── repository/              # Acesso a dados
+│   │   │   ├── service/                 # Regras de negócio
+│   │   │   └── controller/              # planejado: camada de entrada
+│   │   └── resources/                   # planejado: configurações e scripts SQL
+│   └── test/
+│       └── java/br/unisul/lanchonete/   # Testes unitários e de integração
+│           ├── AppTest.java
+│           ├── repository/
+│           └── service/
 ├── .dockerignore             # Arquivos excluídos do contexto de build da imagem
+├── .env.example              # Modelo das variáveis de ambiente (usadas quando houver banco)
 ├── .gitignore
 ├── docker-compose.yml        # Serviço da aplicação (banco: planejado)
 ├── Dockerfile                # Imagem multi-stage: build com testes e execução com JRE
