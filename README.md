@@ -384,10 +384,50 @@ fix(cliente): validar CPF com dígitos repetidos
 
 ## 🌿 Fluxo de trabalho com Git
 
-- Branch principal: `main`
-- Trabalho em branches curtas: `feat/nome-da-feature`, `fix/nome-do-bug`
-- Integração via Pull Request com pelo menos uma revisão
-- Issues abertas pelo professor são prioridade e devem ser resolvidas antes da entrega
+**Branches**
+
+- `main` é a branch principal.
+- O trabalho é feito em branches curtas, criadas a partir da `main` atualizada, com os prefixos `feat/`, `fix/`, `test/`, `refactor/`, `docs/`, `chore/` e `ci/` (os mesmos tipos da convenção de commits). Exemplos: `feat/produto`, `test/cliente-integracao`.
+
+**Pull Request**
+
+- Toda mudança entra na `main` por Pull Request.
+- A CI precisa estar verde (testes, cobertura mínima e Docker).
+- É necessária pelo menos uma revisão de outro integrante.
+- A descrição referencia a issue: `Refs #N`, ou `Closes #N` quando o PR resolve a issue.
+
+**Merge**
+
+- Sempre com **Create a merge commit**, nunca com **Squash and merge**, para preservar os commits atômicos e a autoria de cada integrante, que é usada na avaliação.
+- Depois do merge, atualizar a `main` local (`git pull`) e apagar a branch.
+
+**Issues do professor**
+
+- São prioridade e devem ser resolvidas antes da entrega.
+
+**Ciclo de trabalho**
+
+```bash
+# 1. Atualizar a main
+git checkout main
+git pull
+
+# 2. Criar a branch
+git checkout -b feat/produto
+
+# 3. Commitar
+git add <arquivos>
+git commit -m "feat(produto): adiciona entidade Produto"
+
+# 4. Enviar e abrir o PR no GitHub
+git push -u origin feat/produto
+
+# 5. Após o merge: voltar para a main e apagar a branch
+git checkout main
+git pull
+git branch -d feat/produto
+git push origin --delete feat/produto
+```
 
 ## 📊 Contribuições
 
