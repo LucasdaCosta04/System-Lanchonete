@@ -60,11 +60,26 @@
     </dependencies>
 
     <build>
+        <finalName>sistema-lanchonete</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
+            </plugin>
+
+            <!-- Define a classe principal no manifesto para permitir java -jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>br.unisul.lanchonete.App</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
             </plugin>
 
             <!-- Expõe o caminho de cada dependência como propriedade (ex.: ${org.mockito:mockito-core:jar}) -->
