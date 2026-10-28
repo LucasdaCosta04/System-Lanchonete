@@ -75,9 +75,11 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 
 - Build com Maven e Java 21 (`pom.xml`)
 - Testes unitários com JUnit 5 e Mockito
+- Testes de integração (`ClienteServiceIntegracaoTest`, com `@Tag("integracao")`), usando o repositório em memória real
 - Relatório de cobertura com JaCoCo, gerado no `mvn verify`
+- Cobertura mínima de 75% de linhas exigida no build (`jacoco:check`)
 - CI no GitHub Actions: compila, testa, gera a cobertura e publica o relatório do JaCoCo
-- Módulo Clientes: entidade, repositório em memória, validação de CPF, cadastro com validação de campos e bloqueio de CPF duplicado, consulta por id e por CPF e listagem
+- Módulo Clientes: entidade, repositório em memória, validação de CPF, cadastro com validação de campos e bloqueio de CPF duplicado, consulta por id e por CPF, listagem, atualização e exclusão
 - Docker: `Dockerfile` multi-stage (build com testes e cobertura; execução só com JRE) e `docker-compose.yml`
 
 **Planejado**
@@ -85,7 +87,6 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 - Análise no SonarCloud e Quality Gate
 - Banco de dados e testes de integração com H2
 - Interface e camada de entrada (`controller/`), incluindo a execução pela linha de comando
-- Atualização e exclusão de clientes
 - Módulos de Produtos, Estoque, Pedidos, Pagamento, Funcionários (login) e Relatórios
 - Documentação em `docs/` (UML, BPM e plano de testes)
 
@@ -161,9 +162,11 @@ CONFIRMADO ──cancelar───▶ CANCELADO
 |---|---|---|---|
 | Linguagem | Java | 21 | ✅ Em uso |
 | Build | Maven (maven-compiler-plugin / maven-surefire-plugin) | 3.13.0 / 3.5.2 | ✅ Em uso |
+| Build | maven-dependency-plugin (carrega o Mockito como agente Java nos testes) | 3.8.1 | ✅ Em uso |
+| Build | maven-jar-plugin (gera o jar executável `sistema-lanchonete.jar`) | 3.4.2 | ✅ Em uso |
 | Testes | JUnit Jupiter | 5.11.4 | ✅ Em uso |
 | Testes | Mockito (mockito-junit-jupiter) | 5.14.2 | ✅ Em uso |
-| Cobertura | JaCoCo | 0.8.12 | ✅ Em uso |
+| Cobertura | JaCoCo (relatório de cobertura e verificação mínima de 75% de linhas no build) | 0.8.12 | ✅ Em uso |
 | CI | GitHub Actions (`actions/checkout`, `actions/setup-java` com Temurin 21, `actions/upload-artifact`) | v5 / v5 / v5 | ✅ Em uso |
 | Contêiner | Docker (multi-stage: `maven:3.9-eclipse-temurin-21` no build e `eclipse-temurin:21-jre` na execução) | — | ✅ Em uso |
 | Persistência | Repositórios em memória | — | ✅ Em uso |
@@ -180,20 +183,27 @@ A stack foi definida pela equipe; a escolha do banco de dados será registrada a
 .
 ├── .github/
 │   └── workflows/
-│       └── ci.yml            # Pipeline: build, testes e cobertura (Sonar: planejado)
+│       └── ci.yml            # Pipeline: build, testes, cobertura mínima e Docker (Sonar: planejado)
 ├── docs/                     # planejado
 │   ├── uml/                  # planejado: casos de uso, classes e sequência
 │   ├── bpm/                  # planejado: fluxo de pedidos e estoque
 │   └── plano-de-testes/      # planejado: plano de testes e evidências
 ├── src/
-│   ├── main/java/            # Código-fonte
-│   │   ├── model/            # Entidades
-│   │   ├── repository/       # Acesso a dados
-│   │   ├── service/          # Regras de negócio
-│   │   └── controller/       # planejado: camada de entrada
-│   ├── main/resources/       # planejado: configurações e scripts SQL
-│   └── test/java/            # Testes unitários (integração: planejado)
+│   ├── main/
+│   │   ├── java/br/unisul/lanchonete/   # Código-fonte
+│   │   │   ├── App.java                 # Classe principal
+│   │   │   ├── model/                   # Entidades
+│   │   │   ├── repository/              # Acesso a dados
+│   │   │   ├── service/                 # Regras de negócio
+│   │   │   └── controller/              # planejado: camada de entrada
+│   │   └── resources/                   # planejado: configurações e scripts SQL
+│   └── test/
+│       └── java/br/unisul/lanchonete/   # Testes unitários e de integração
+│           ├── AppTest.java
+│           ├── repository/
+│           └── service/
 ├── .dockerignore             # Arquivos excluídos do contexto de build da imagem
+├── .env.example              # Modelo das variáveis de ambiente (usadas quando houver banco)
 ├── .gitignore
 ├── docker-compose.yml        # Serviço da aplicação (banco: planejado)
 ├── Dockerfile                # Imagem multi-stage: build com testes e execução com JRE
@@ -206,14 +216,16 @@ A stack foi definida pela equipe; a escolha do banco de dados será registrada a
 
 | Entidade | Atributos principais |
 |---|---|
-| **Produtos** | id, nome, categoria, preço, estoque |
+| **Produtos** | id, nome, categoria, preço, quantidadeEstoque (saldo atual do produto) |
 | **Clientes** | id, nome, cpf, telefone |
 | **Funcionários** | id, nome, cargo, login, senha (hash) |
 | **Pedidos** | id, id_cliente, valor_total, status |
 | **Itens_Pedido** | id, id_pedido, id_produto, quantidade, preço_unitário |
-| **Estoque** | id, id_produto, quantidade_entrada, quantidade_saída |
+| **Estoque** (histórico de movimentações de entrada e saída) *(planejado)* | id, id_produto, quantidade_entrada, quantidade_saída |
 
-**Relacionamentos:** um cliente tem vários pedidos; um pedido tem vários itens; cada item referencia um produto; cada movimentação de estoque referencia um produto.
+> **Observação:** na versão atual, o saldo é controlado diretamente em `Produto.quantidadeEstoque` pelo `EstoqueService` (verificar, dar baixa e repor). O registro histórico de cada movimentação será implementado depois.
+
+**Relacionamentos:** um cliente tem vários pedidos; um pedido tem vários itens; cada item referencia um produto; quando o histórico for implementado, cada movimentação de estoque referenciará um produto.
 
 ## 🚀 Como executar
 
@@ -272,16 +284,23 @@ mvn test
 # Executar testes e gerar relatório de cobertura
 mvn verify
 # Relatório em: target/site/jacoco/index.html
+
+# Executar só os testes de integração
+mvn test -Dgroups=integracao
 ```
 
 | Tipo | Escopo |
 |---|---|
-| **Unitários** | Regras de negócio e validações de cada serviço |
-| **Integração** | Serviços + repositórios com banco H2 |
-| **Sistema** | Fluxo completo de pedido |
-| **Usabilidade** | Roteiro de avaliação com o protótipo |
+| **Unitários** | Regras de negócio e validações, com JUnit 5 e Mockito |
+| **Integração** | Serviço + repositório em memória real, sem mocks (H2: planejado) |
+| **Sistema** *(planejado)* | Fluxo completo de pedido |
+| **Usabilidade** *(planejado)* | Roteiro de avaliação com o protótipo |
 
-**Metas:** cobertura ≥ 75% · Quality Gate aprovado · zero issues abertos.
+Total atual: **59 métodos de teste** e **79 execuções** (contando os casos dos testes parametrizados).
+
+A cobertura mínima de 75% de linhas já é exigida no build: o `mvn verify` falha se a cobertura ficar abaixo disso.
+
+**Metas:** Quality Gate aprovado · zero issues abertos.
 
 ### Análise estática e Quality Gate (planejado)
 
@@ -323,13 +342,22 @@ mvn verify
 
 ## ⚙️ Integração contínua
 
-A cada `push` e `pull request` para a `main`, o GitHub Actions:
+O workflow `CI` (`.github/workflows/ci.yml`) roda a cada `push` e `pull request` em qualquer branch.
 
-1. Compila o projeto
-2. Executa os testes unitários
-3. Gera o relatório de cobertura (JaCoCo)
-4. Constrói a imagem Docker e executa o contêiner (job `docker`, que só roda após os testes passarem)
-5. Envia a análise ao SonarCloud e valida o Quality Gate *(planejado)*
+**Job `build`**
+
+1. **Checkout do código** (`actions/checkout`)
+2. **Configurar Java 21 (Temurin)** (`actions/setup-java`, com cache do Maven)
+3. **Compilar, testar e gerar cobertura**: `mvn -B verify` compila o projeto, roda os testes unitários e de integração, gera o relatório do JaCoCo e verifica a cobertura mínima de 75% de linhas, reprovando o build abaixo disso
+4. **Publicar relatório do JaCoCo**: envia `target/site/jacoco` como artefato `jacoco-report`, mesmo se o build falhar
+
+**Job `docker`** (roda depois do job `build`, só se ele passar)
+
+1. **Checkout do código**
+2. **Construir imagem Docker**: `docker build -t sistema-lanchonete .`
+3. **Executar contêiner**: `docker run --rm sistema-lanchonete`
+
+**Planejado:** envio da análise ao SonarCloud e validação do Quality Gate (ver [Análise estática e Quality Gate](#análise-estática-e-quality-gate-planejado)).
 
 ## ✍️ Convenção de commits
 
@@ -365,10 +393,50 @@ fix(cliente): validar CPF com dígitos repetidos
 
 ## 🌿 Fluxo de trabalho com Git
 
-- Branch principal: `main`
-- Trabalho em branches curtas: `feat/nome-da-feature`, `fix/nome-do-bug`
-- Integração via Pull Request com pelo menos uma revisão
-- Issues abertas pelo professor são prioridade e devem ser resolvidas antes da entrega
+**Branches**
+
+- `main` é a branch principal.
+- O trabalho é feito em branches curtas, criadas a partir da `main` atualizada, com os prefixos `feat/`, `fix/`, `test/`, `refactor/`, `docs/`, `chore/` e `ci/` (os mesmos tipos da convenção de commits). Exemplos: `feat/produto`, `test/cliente-integracao`.
+
+**Pull Request**
+
+- Toda mudança entra na `main` por Pull Request.
+- A CI precisa estar verde (testes, cobertura mínima e Docker).
+- É necessária pelo menos uma revisão de outro integrante.
+- A descrição referencia a issue: `Refs #N`, ou `Closes #N` quando o PR resolve a issue.
+
+**Merge**
+
+- Sempre com **Create a merge commit**, nunca com **Squash and merge**, para preservar os commits atômicos e a autoria de cada integrante, que é usada na avaliação.
+- Depois do merge, atualizar a `main` local (`git pull`) e apagar a branch.
+
+**Issues do professor**
+
+- São prioridade e devem ser resolvidas antes da entrega.
+
+**Ciclo de trabalho**
+
+```bash
+# 1. Atualizar a main
+git checkout main
+git pull
+
+# 2. Criar a branch
+git checkout -b feat/produto
+
+# 3. Commitar
+git add <arquivos>
+git commit -m "feat(produto): adiciona entidade Produto"
+
+# 4. Enviar e abrir o PR no GitHub
+git push -u origin feat/produto
+
+# 5. Após o merge: voltar para a main e apagar a branch
+git checkout main
+git pull
+git branch -d feat/produto
+git push origin --delete feat/produto
+```
 
 ## 📊 Contribuições
 
@@ -377,19 +445,22 @@ fix(cliente): validar CPF com dígitos repetidos
 | Carlos Henrique Lohn | Classe principal da aplicação | [`AppTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/AppTest.java) |
 | Carlos Henrique Lohn | Entidade Cliente | Sem teste dedicado; usada em [`ClienteRepositoryEmMemoriaTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/repository/ClienteRepositoryEmMemoriaTest.java) e [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
 | Carlos Henrique Lohn | Validação de CPF | [`CpfValidatorTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/CpfValidatorTest.java) |
-| Carlos Henrique Lohn | Repositório de clientes em memória | [`ClienteRepositoryEmMemoriaTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/repository/ClienteRepositoryEmMemoriaTest.java) |
+| Carlos Henrique Lohn | Interface [`ClienteRepository`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/repository/ClienteRepository.java) e repositório de clientes em memória | [`ClienteRepositoryEmMemoriaTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/repository/ClienteRepositoryEmMemoriaTest.java) |
 | Carlos Henrique Lohn | Cadastro de cliente com validações e bloqueio de CPF duplicado | [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
 | Carlos Henrique Lohn | Consulta de cliente por id e por CPF e listagem | [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
+| Carlos Henrique Lohn | Atualização de cliente | [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
+| Carlos Henrique Lohn | Exclusão de cliente | [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
+| Carlos Henrique Lohn | Testes de integração do módulo de clientes (serviço + repositório em memória real) | [`ClienteServiceIntegracaoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceIntegracaoTest.java) |
 | Lucas da Costa | Pedidos | Em desenvolvimento |
-| Murilo dos Santos Ferreira | Funcionários e Login | Em desenvolvimento |
+| Murilo dos Santos Ferreira | Produto e Estoque (em desenvolvimento) | Em desenvolvimento |
 
 ### Commits por integrante
 
 | Aluno | Commits de código-fonte | Principais commits |
 |---|---|---|
-| Carlos Henrique Lohn | 13 | [`97ff666`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/97ff66691358fd1dd6735c014b0fcfa4d9aa4c34) entidade Cliente · [`c06a33a`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/c06a33a41d125cbb38c5c1677f2b1d10950bfdb3) validação de CPF · [`f75f94b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f75f94b565a474e58e55ec2e69e82891a5bcb158) repositório em memória · [`e3aaf31`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/e3aaf314eafd422a6c9bf9dd6d4adbb8fb76b664) cadastro com validações · [`11b1414`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/11b14142cdb581c42c16bd38b8992cb94ef3d6f3) bloqueio de CPF duplicado · [`dc7b364`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/dc7b3644668b51f80e6fffd0b183091952c645f1) consultas de cliente |
-| Lucas da Costa | Em desenvolvimento | Em desenvolvimento |
-| Murilo dos Santos Ferreira | Em desenvolvimento | Em desenvolvimento |
+| Carlos Henrique Lohn | 20 | [`97ff666`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/97ff66691358fd1dd6735c014b0fcfa4d9aa4c34) entidade Cliente · [`c06a33a`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/c06a33a41d125cbb38c5c1677f2b1d10950bfdb3) validação de CPF · [`f75f94b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f75f94b565a474e58e55ec2e69e82891a5bcb158) repositório em memória · [`e3aaf31`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/e3aaf314eafd422a6c9bf9dd6d4adbb8fb76b664) cadastro com validações · [`11b1414`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/11b14142cdb581c42c16bd38b8992cb94ef3d6f3) bloqueio de CPF duplicado · [`dc7b364`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/dc7b3644668b51f80e6fffd0b183091952c645f1) consultas de cliente · [`26a88de`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/26a88de14e62204404a984a405320539b183dd42) atualização de cliente · [`14a147b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/14a147bf0549cc4f415bb282573de8ca1d06a4ef) exclusão de cliente · [`8bd8d25`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/8bd8d253c3464ccd956e8cfabe51eb30876ac017) integração: cadastro e consulta · [`392edcd`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/392edcd0cbc915357bc9a3e4da052877adf449e3) integração: atualização e exclusão · [`3681901`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/368190102affde81d689b725c4f1f31b6067c5de) integração: ciclo completo |
+| Lucas da Costa | 0 | Em desenvolvimento |
+| Murilo dos Santos Ferreira | 0 | Em desenvolvimento |
 
 > As tabelas são atualizadas a cada entrega. Só são considerados commits que alteram código-fonte (`src/`) na branch `main`.
 
@@ -399,7 +470,7 @@ fix(cliente): validar CPF com dígitos repetidos
 |---|---|---|---|
 | _Lucas da Costa_ | Líder de equipe | Pedidos | [@LucasdaCosta04](https://github.com/LucasdaCosta04) |
 | _Carlos Henrique Lohn_ | Desenvolvedor | Clientes | [@carloshlohn](https://github.com/carloshlohn) |
-| _Murilo dos Santos Ferreira_ | Desenvolvedor | Funcionários e Login | [@MuriloS-Ferreira](https://github.com/MuriloS-Ferreira) |
+| _Murilo dos Santos Ferreira_ | Desenvolvedor | Produto e Estoque; depois Funcionários e Login | [@MuriloS-Ferreira](https://github.com/MuriloS-Ferreira) |
 
 **Curso:** _Ciência da Computação_ · **Semestre:** _6_ · **Professor:** Jorge Werner
 
