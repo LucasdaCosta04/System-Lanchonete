@@ -1,0 +1,10 @@
+# O serviço de banco de dados será incluído quando a persistência for implementada.
+#
+# Uso:
+#   docker compose up --build    # constrói a imagem e executa a aplicação
+#   docker compose run --rm app  # executa uma vez e remove o contêiner ao final
+
+services:
+  app:
+    build: .
+    image: sistema-lanchonete
