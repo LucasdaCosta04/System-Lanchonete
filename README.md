@@ -75,9 +75,11 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 
 - Build com Maven e Java 21 (`pom.xml`)
 - Testes unitários com JUnit 5 e Mockito
+- Testes de integração (`ClienteServiceIntegracaoTest`, com `@Tag("integracao")`), usando o repositório em memória real
 - Relatório de cobertura com JaCoCo, gerado no `mvn verify`
+- Cobertura mínima de 75% de linhas exigida no build (`jacoco:check`)
 - CI no GitHub Actions: compila, testa, gera a cobertura e publica o relatório do JaCoCo
-- Módulo Clientes: entidade, repositório em memória, validação de CPF, cadastro com validação de campos e bloqueio de CPF duplicado, consulta por id e por CPF e listagem
+- Módulo Clientes: entidade, repositório em memória, validação de CPF, cadastro com validação de campos e bloqueio de CPF duplicado, consulta por id e por CPF, listagem, atualização e exclusão
 - Docker: `Dockerfile` multi-stage (build com testes e cobertura; execução só com JRE) e `docker-compose.yml`
 
 **Planejado**
@@ -85,7 +87,6 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 - Análise no SonarCloud e Quality Gate
 - Banco de dados e testes de integração com H2
 - Interface e camada de entrada (`controller/`), incluindo a execução pela linha de comando
-- Atualização e exclusão de clientes
 - Módulos de Produtos, Estoque, Pedidos, Pagamento, Funcionários (login) e Relatórios
 - Documentação em `docs/` (UML, BPM e plano de testes)
 
@@ -192,7 +193,7 @@ A stack foi definida pela equipe; a escolha do banco de dados será registrada a
 │   │   ├── service/          # Regras de negócio
 │   │   └── controller/       # planejado: camada de entrada
 │   ├── main/resources/       # planejado: configurações e scripts SQL
-│   └── test/java/            # Testes unitários (integração: planejado)
+│   └── test/java/            # Testes unitários e de integração
 ├── .dockerignore             # Arquivos excluídos do contexto de build da imagem
 ├── .gitignore
 ├── docker-compose.yml        # Serviço da aplicação (banco: planejado)
@@ -272,16 +273,23 @@ mvn test
 # Executar testes e gerar relatório de cobertura
 mvn verify
 # Relatório em: target/site/jacoco/index.html
+
+# Executar só os testes de integração
+mvn test -Dgroups=integracao
 ```
 
 | Tipo | Escopo |
 |---|---|
-| **Unitários** | Regras de negócio e validações de cada serviço |
-| **Integração** | Serviços + repositórios com banco H2 |
-| **Sistema** | Fluxo completo de pedido |
-| **Usabilidade** | Roteiro de avaliação com o protótipo |
+| **Unitários** | Regras de negócio e validações, com JUnit 5 e Mockito |
+| **Integração** | Serviço + repositório em memória real, sem mocks (H2: planejado) |
+| **Sistema** *(planejado)* | Fluxo completo de pedido |
+| **Usabilidade** *(planejado)* | Roteiro de avaliação com o protótipo |
 
-**Metas:** cobertura ≥ 75% · Quality Gate aprovado · zero issues abertos.
+Total atual: **59 métodos de teste** e **79 execuções** (contando os casos dos testes parametrizados).
+
+A cobertura mínima de 75% de linhas já é exigida no build: o `mvn verify` falha se a cobertura ficar abaixo disso.
+
+**Metas:** Quality Gate aprovado · zero issues abertos.
 
 ### Análise estática e Quality Gate (planejado)
 
