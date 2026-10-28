@@ -20,6 +20,11 @@
         <mockito.version>5.14.2</mockito.version>
         <h2.version>2.3.232</h2.version>
         <jacoco.version>0.8.12</jacoco.version>
+
+        <sonar.organization>lucasdacosta04</sonar.organization>
+        <sonar.projectKey>LucasdaCosta04_System-Lanchonete</sonar.projectKey>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencyManagement>
@@ -61,6 +66,16 @@
 
     <build>
         <finalName>sistema-lanchonete</finalName>
+        <pluginManagement>
+            <plugins>
+                <!-- Análise no SonarCloud: executado apenas via mvn sonar:sonar -->
+                <plugin>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>5.8.0.7211</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
