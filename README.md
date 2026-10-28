@@ -78,6 +78,7 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 - Relatório de cobertura com JaCoCo, gerado no `mvn verify`
 - CI no GitHub Actions: compila, testa, gera a cobertura e publica o relatório do JaCoCo
 - Módulo Clientes: entidade, repositório em memória, validação de CPF, cadastro com validação de campos e bloqueio de CPF duplicado, consulta por id e por CPF e listagem
+- Docker: `Dockerfile` multi-stage (build com testes e cobertura; execução só com JRE) e `docker-compose.yml`
 
 **Planejado**
 
@@ -87,7 +88,6 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 - Atualização e exclusão de clientes
 - Módulos de Produtos, Estoque, Pedidos, Pagamento, Funcionários (login) e Relatórios
 - Documentação em `docs/` (UML, BPM e plano de testes)
-- Dockerfile
 
 ## 🔄 Fluxo principal e critérios de aceitação
 
@@ -165,6 +165,7 @@ CONFIRMADO ──cancelar───▶ CANCELADO
 | Testes | Mockito (mockito-junit-jupiter) | 5.14.2 | ✅ Em uso |
 | Cobertura | JaCoCo | 0.8.12 | ✅ Em uso |
 | CI | GitHub Actions (`actions/checkout`, `actions/setup-java` com Temurin 21, `actions/upload-artifact`) | v5 / v5 / v5 | ✅ Em uso |
+| Contêiner | Docker (multi-stage: `maven:3.9-eclipse-temurin-21` no build e `eclipse-temurin:21-jre` na execução) | — | ✅ Em uso |
 | Persistência | Repositórios em memória | — | ✅ Em uso |
 | Persistência | Banco de dados relacional | — | ⏳ Planejado |
 | Testes | H2 (dependência de teste no `pom.xml`, ainda não usada nos testes) | 2.3.232 | ⏳ Planejado |
@@ -192,7 +193,10 @@ A stack foi definida pela equipe; a escolha do banco de dados será registrada a
 │   │   └── controller/       # planejado: camada de entrada
 │   ├── main/resources/       # planejado: configurações e scripts SQL
 │   └── test/java/            # Testes unitários (integração: planejado)
+├── .dockerignore             # Arquivos excluídos do contexto de build da imagem
 ├── .gitignore
+├── docker-compose.yml        # Serviço da aplicação (banco: planejado)
+├── Dockerfile                # Imagem multi-stage: build com testes e execução com JRE
 ├── LICENSE
 ├── pom.xml
 └── README.md
@@ -231,6 +235,21 @@ mvn clean install
 ```
 
 > **Observação:** a execução do fluxo de pedidos pela linha de comando está planejada e ainda não está disponível.
+
+### Com Docker (sem instalar Java ou Maven)
+
+**Pré-requisito:** Docker Desktop ou Docker Engine com o plugin Compose.
+
+```bash
+# Construir a imagem e executar a aplicação
+docker compose up --build
+
+# Alternativa sem Compose
+docker build -t sistema-lanchonete .
+docker run --rm sistema-lanchonete
+```
+
+O build da imagem executa `mvn verify`, que roda todos os testes e a verificação de cobertura mínima do JaCoCo. Se algum teste falhar ou a cobertura ficar abaixo do mínimo, o build é interrompido e a imagem não é gerada.
 
 ### Variáveis de ambiente
 
@@ -309,7 +328,8 @@ A cada `push` e `pull request` para a `main`, o GitHub Actions:
 1. Compila o projeto
 2. Executa os testes unitários
 3. Gera o relatório de cobertura (JaCoCo)
-4. Envia a análise ao SonarCloud e valida o Quality Gate *(planejado)*
+4. Constrói a imagem Docker e executa o contêiner (job `docker`, que só roda após os testes passarem)
+5. Envia a análise ao SonarCloud e valida o Quality Gate *(planejado)*
 
 ## ✍️ Convenção de commits
 
