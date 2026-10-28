@@ -394,19 +394,22 @@ fix(cliente): validar CPF com dígitos repetidos
 | Carlos Henrique Lohn | Classe principal da aplicação | [`AppTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/AppTest.java) |
 | Carlos Henrique Lohn | Entidade Cliente | Sem teste dedicado; usada em [`ClienteRepositoryEmMemoriaTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/repository/ClienteRepositoryEmMemoriaTest.java) e [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
 | Carlos Henrique Lohn | Validação de CPF | [`CpfValidatorTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/CpfValidatorTest.java) |
-| Carlos Henrique Lohn | Repositório de clientes em memória | [`ClienteRepositoryEmMemoriaTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/repository/ClienteRepositoryEmMemoriaTest.java) |
+| Carlos Henrique Lohn | Interface [`ClienteRepository`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/repository/ClienteRepository.java) e repositório de clientes em memória | [`ClienteRepositoryEmMemoriaTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/repository/ClienteRepositoryEmMemoriaTest.java) |
 | Carlos Henrique Lohn | Cadastro de cliente com validações e bloqueio de CPF duplicado | [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
 | Carlos Henrique Lohn | Consulta de cliente por id e por CPF e listagem | [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
+| Carlos Henrique Lohn | Atualização de cliente | [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
+| Carlos Henrique Lohn | Exclusão de cliente | [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
+| Carlos Henrique Lohn | Testes de integração do módulo de clientes (serviço + repositório em memória real) | [`ClienteServiceIntegracaoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceIntegracaoTest.java) |
 | Lucas da Costa | Pedidos | Em desenvolvimento |
-| Murilo dos Santos Ferreira | Funcionários e Login | Em desenvolvimento |
+| Murilo dos Santos Ferreira | Produto e Estoque (em desenvolvimento) | Em desenvolvimento |
 
 ### Commits por integrante
 
 | Aluno | Commits de código-fonte | Principais commits |
 |---|---|---|
-| Carlos Henrique Lohn | 13 | [`97ff666`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/97ff66691358fd1dd6735c014b0fcfa4d9aa4c34) entidade Cliente · [`c06a33a`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/c06a33a41d125cbb38c5c1677f2b1d10950bfdb3) validação de CPF · [`f75f94b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f75f94b565a474e58e55ec2e69e82891a5bcb158) repositório em memória · [`e3aaf31`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/e3aaf314eafd422a6c9bf9dd6d4adbb8fb76b664) cadastro com validações · [`11b1414`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/11b14142cdb581c42c16bd38b8992cb94ef3d6f3) bloqueio de CPF duplicado · [`dc7b364`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/dc7b3644668b51f80e6fffd0b183091952c645f1) consultas de cliente |
-| Lucas da Costa | Em desenvolvimento | Em desenvolvimento |
-| Murilo dos Santos Ferreira | Em desenvolvimento | Em desenvolvimento |
+| Carlos Henrique Lohn | 20 | [`97ff666`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/97ff66691358fd1dd6735c014b0fcfa4d9aa4c34) entidade Cliente · [`c06a33a`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/c06a33a41d125cbb38c5c1677f2b1d10950bfdb3) validação de CPF · [`f75f94b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f75f94b565a474e58e55ec2e69e82891a5bcb158) repositório em memória · [`e3aaf31`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/e3aaf314eafd422a6c9bf9dd6d4adbb8fb76b664) cadastro com validações · [`11b1414`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/11b14142cdb581c42c16bd38b8992cb94ef3d6f3) bloqueio de CPF duplicado · [`dc7b364`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/dc7b3644668b51f80e6fffd0b183091952c645f1) consultas de cliente · [`26a88de`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/26a88de14e62204404a984a405320539b183dd42) atualização de cliente · [`14a147b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/14a147bf0549cc4f415bb282573de8ca1d06a4ef) exclusão de cliente · [`8bd8d25`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/8bd8d253c3464ccd956e8cfabe51eb30876ac017) integração: cadastro e consulta · [`392edcd`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/392edcd0cbc915357bc9a3e4da052877adf449e3) integração: atualização e exclusão · [`3681901`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/368190102affde81d689b725c4f1f31b6067c5de) integração: ciclo completo |
+| Lucas da Costa | 0 | Em desenvolvimento |
+| Murilo dos Santos Ferreira | 0 | Em desenvolvimento |
 
 > As tabelas são atualizadas a cada entrega. Só são considerados commits que alteram código-fonte (`src/`) na branch `main`.
 
@@ -416,7 +419,7 @@ fix(cliente): validar CPF com dígitos repetidos
 |---|---|---|---|
 | _Lucas da Costa_ | Líder de equipe | Pedidos | [@LucasdaCosta04](https://github.com/LucasdaCosta04) |
 | _Carlos Henrique Lohn_ | Desenvolvedor | Clientes | [@carloshlohn](https://github.com/carloshlohn) |
-| _Murilo dos Santos Ferreira_ | Desenvolvedor | Funcionários e Login | [@MuriloS-Ferreira](https://github.com/MuriloS-Ferreira) |
+| _Murilo dos Santos Ferreira_ | Desenvolvedor | Produto e Estoque; depois Funcionários e Login | [@MuriloS-Ferreira](https://github.com/MuriloS-Ferreira) |
 
 **Curso:** _Ciência da Computação_ · **Semestre:** _6_ · **Professor:** Jorge Werner
 
