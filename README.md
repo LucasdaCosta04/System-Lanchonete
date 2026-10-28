@@ -181,7 +181,7 @@ A stack foi definida pela equipe; a escolha do banco de dados será registrada a
 .
 ├── .github/
 │   └── workflows/
-│       └── ci.yml            # Pipeline: build, testes e cobertura (Sonar: planejado)
+│       └── ci.yml            # Pipeline: build, testes, cobertura mínima e Docker (Sonar: planejado)
 ├── docs/                     # planejado
 │   ├── uml/                  # planejado: casos de uso, classes e sequência
 │   ├── bpm/                  # planejado: fluxo de pedidos e estoque
@@ -331,13 +331,22 @@ A cobertura mínima de 75% de linhas já é exigida no build: o `mvn verify` fal
 
 ## ⚙️ Integração contínua
 
-A cada `push` e `pull request` para a `main`, o GitHub Actions:
+O workflow `CI` (`.github/workflows/ci.yml`) roda a cada `push` e `pull request` em qualquer branch.
 
-1. Compila o projeto
-2. Executa os testes unitários
-3. Gera o relatório de cobertura (JaCoCo)
-4. Constrói a imagem Docker e executa o contêiner (job `docker`, que só roda após os testes passarem)
-5. Envia a análise ao SonarCloud e valida o Quality Gate *(planejado)*
+**Job `build`**
+
+1. **Checkout do código** (`actions/checkout`)
+2. **Configurar Java 21 (Temurin)** (`actions/setup-java`, com cache do Maven)
+3. **Compilar, testar e gerar cobertura**: `mvn -B verify` compila o projeto, roda os testes unitários e de integração, gera o relatório do JaCoCo e verifica a cobertura mínima de 75% de linhas, reprovando o build abaixo disso
+4. **Publicar relatório do JaCoCo**: envia `target/site/jacoco` como artefato `jacoco-report`, mesmo se o build falhar
+
+**Job `docker`** (roda depois do job `build`, só se ele passar)
+
+1. **Checkout do código**
+2. **Construir imagem Docker**: `docker build -t sistema-lanchonete .`
+3. **Executar contêiner**: `docker run --rm sistema-lanchonete`
+
+**Planejado:** envio da análise ao SonarCloud e validação do Quality Gate (ver [Análise estática e Quality Gate](#análise-estática-e-quality-gate-planejado)).
 
 ## ✍️ Convenção de commits
 
