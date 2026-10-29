@@ -81,13 +81,14 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 - CI no GitHub Actions: compila, testa, gera a cobertura e publica o relatório do JaCoCo
 - Módulo Clientes: entidade, repositório em memória, validação de CPF, cadastro com validação de campos e bloqueio de CPF duplicado, consulta por id e por CPF, listagem, atualização e exclusão
 - Docker: `Dockerfile` multi-stage (build com testes e cobertura; execução só com JRE) e `docker-compose.yml`
+- Análise estática e Quality Gate integrados ao SonarCloud via GitHub Actions
+- Módulo Pedidos (Modelo e Repositório): enum `StatusPedido`, `ItemPedido` (com cálculo de subtotal), `Pedido` (com cálculo de total e lista imutável de itens) e `PedidoRepositoryEmMemoria`
 
 **Planejado**
 
-- Análise no SonarCloud e Quality Gate
 - Banco de dados e testes de integração com H2
 - Interface e camada de entrada (`controller/`), incluindo a execução pela linha de comando
-- Módulos de Produtos, Estoque, Pedidos, Pagamento, Funcionários (login) e Relatórios
+- Módulos de Produtos, Estoque, Serviço de Pedidos (`PedidoService`), Pagamento, Funcionários (login) e Relatórios
 - Documentação em `docs/` (UML, BPM e plano de testes)
 
 ## 🔄 Fluxo principal e critérios de aceitação
@@ -99,7 +100,7 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 - [ ] Pedido com estoque suficiente é criado e o estoque diminui na quantidade exata.
 - [ ] Pedido com estoque insuficiente é rejeitado com mensagem clara e sem alterar o estoque.
 - [ ] Pedido cancelado devolve os itens ao estoque.
-- [ ] Valor total do pedido é igual à soma de `quantidade × preço unitário` dos itens.
+- [x] Valor total do pedido é igual à soma de `quantidade × preço unitário` dos itens.
 - [ ] Login com credenciais inválidas é negado.
 
 ### Regras de cancelamento e reposição de estoque
@@ -172,7 +173,7 @@ CONFIRMADO ──cancelar───▶ CANCELADO
 | Persistência | Repositórios em memória | — | ✅ Em uso |
 | Persistência | Banco de dados relacional | — | ⏳ Planejado |
 | Testes | H2 (dependência de teste no `pom.xml`, ainda não usada nos testes) | 2.3.232 | ⏳ Planejado |
-| Análise estática | SonarCloud | — | ⏳ Planejado |
+| Análise estática | SonarCloud | — | ✅ Em uso |
 | Prototipação | Figma (protótipo de interface) | — | ⏳ Planejado |
 
 A stack foi definida pela equipe; a escolha do banco de dados será registrada aqui quando a persistência for implementada.
@@ -183,7 +184,7 @@ A stack foi definida pela equipe; a escolha do banco de dados será registrada a
 .
 ├── .github/
 │   └── workflows/
-│       └── ci.yml            # Pipeline: build, testes, cobertura mínima e Docker (Sonar: planejado)
+│       └── ci.yml            # Pipeline: build, testes, cobertura mínima, SonarCloud e Docker
 ├── docs/                     # planejado
 │   ├── uml/                  # planejado: casos de uso, classes e sequência
 │   ├── bpm/                  # planejado: fluxo de pedidos e estoque
@@ -200,6 +201,7 @@ A stack foi definida pela equipe; a escolha do banco de dados será registrada a
 │   └── test/
 │       └── java/br/unisul/lanchonete/   # Testes unitários e de integração
 │           ├── AppTest.java
+│           ├── model/
 │           ├── repository/
 │           └── service/
 ├── .dockerignore             # Arquivos excluídos do contexto de build da imagem
@@ -296,23 +298,23 @@ mvn test -Dgroups=integracao
 | **Sistema** *(planejado)* | Fluxo completo de pedido |
 | **Usabilidade** *(planejado)* | Roteiro de avaliação com o protótipo |
 
-Total atual: **59 métodos de teste** e **79 execuções** (contando os casos dos testes parametrizados).
+Total atual: **90 métodos de teste** e **110 execuções** (contando os casos dos testes parametrizados).
 
 A cobertura mínima de 75% de linhas já é exigida no build: o `mvn verify` falha se a cobertura ficar abaixo disso.
 
 **Metas:** Quality Gate aprovado · zero issues abertos.
 
-### Análise estática e Quality Gate (planejado)
+### Análise estática e Quality Gate
 
 **Ferramenta:** SonarCloud, integrado ao Maven e ao GitHub Actions.
 
 **Passos de integração**
 
-1. *(planejado)* Criar a organização no SonarCloud a partir do GitHub e importar o repositório.
-2. *(planejado)* Gerar o token e cadastrá-lo como secret `SONAR_TOKEN` no repositório.
-3. *(planejado)* Configurar no `pom.xml` as propriedades `sonar.organization`, `sonar.projectKey` e o caminho do relatório XML do JaCoCo (`sonar.coverage.jacoco.xmlReportPaths`).
-4. *(planejado)* Adicionar ao workflow uma etapa que roda `mvn verify sonar:sonar` após os testes.
-5. *(planejado)* Desativar a "Automatic Analysis" do SonarCloud para usar a análise via CI.
+1. Criar a organização no SonarCloud a partir do GitHub e importar o repositório.
+2. Gerar o token e cadastrá-lo como secret `SONAR_TOKEN` no repositório.
+3. Configurar no `pom.xml` as propriedades `sonar.organization`, `sonar.projectKey` e o caminho do relatório XML do JaCoCo (`sonar.coverage.jacoco.xmlReportPaths`).
+4. Adicionar ao workflow uma etapa que roda `mvn verify sonar:sonar` após os testes.
+5. Desativar a "Automatic Analysis" do SonarCloud para usar a análise via CI.
 
 **Quality Gate:** usar o padrão "Sonar way", que avalia o código novo:
 
@@ -357,7 +359,7 @@ O workflow `CI` (`.github/workflows/ci.yml`) roda a cada `push` e `pull request`
 2. **Construir imagem Docker**: `docker build -t sistema-lanchonete .`
 3. **Executar contêiner**: `docker run --rm sistema-lanchonete`
 
-**Planejado:** envio da análise ao SonarCloud e validação do Quality Gate (ver [Análise estática e Quality Gate](#análise-estática-e-quality-gate-planejado)).
+**Análise no SonarCloud:** no job `build`, depois dos testes, a etapa **Análise SonarCloud** roda `mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar` com o secret `SONAR_TOKEN`, enviando o código e o relatório de cobertura do JaCoCo para validação do Quality Gate. Ela é executada em pull requests e em pushes na `main`, com cache em `~/.sonar/cache` (ver [Análise estática e Quality Gate](#análise-estática-e-quality-gate)).
 
 ## ✍️ Convenção de commits
 
@@ -451,7 +453,10 @@ git push origin --delete feat/produto
 | Carlos Henrique Lohn | Atualização de cliente | [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
 | Carlos Henrique Lohn | Exclusão de cliente | [`ClienteServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceTest.java) |
 | Carlos Henrique Lohn | Testes de integração do módulo de clientes (serviço + repositório em memória real) | [`ClienteServiceIntegracaoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ClienteServiceIntegracaoTest.java) |
-| Lucas da Costa | Pedidos | Em desenvolvimento |
+| Lucas da Costa | Enum [`StatusPedido`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/model/StatusPedido.java) (`ABERTO`, `CONFIRMADO`, `CANCELADO`) | Coberto em [`PedidoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/model/PedidoTest.java) |
+| Lucas da Costa | Entidade [`ItemPedido`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/model/ItemPedido.java) com validações e cálculo de subtotal | [`ItemPedidoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/model/ItemPedidoTest.java) |
+| Lucas da Costa | Entidade [`Pedido`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/model/Pedido.java) com controle de status e cálculo do total | [`PedidoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/model/PedidoTest.java) |
+| Lucas da Costa | Interface [`PedidoRepository`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/repository/PedidoRepository.java) e [`PedidoRepositoryEmMemoria`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/repository/PedidoRepositoryEmMemoria.java) | [`PedidoRepositoryEmMemoriaTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/repository/PedidoRepositoryEmMemoriaTest.java) |
 | Murilo dos Santos Ferreira | Produto e Estoque (em desenvolvimento) | Em desenvolvimento |
 
 ### Commits por integrante
@@ -459,7 +464,7 @@ git push origin --delete feat/produto
 | Aluno | Commits de código-fonte | Principais commits |
 |---|---|---|
 | Carlos Henrique Lohn | 20 | [`97ff666`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/97ff66691358fd1dd6735c014b0fcfa4d9aa4c34) entidade Cliente · [`c06a33a`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/c06a33a41d125cbb38c5c1677f2b1d10950bfdb3) validação de CPF · [`f75f94b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f75f94b565a474e58e55ec2e69e82891a5bcb158) repositório em memória · [`e3aaf31`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/e3aaf314eafd422a6c9bf9dd6d4adbb8fb76b664) cadastro com validações · [`11b1414`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/11b14142cdb581c42c16bd38b8992cb94ef3d6f3) bloqueio de CPF duplicado · [`dc7b364`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/dc7b3644668b51f80e6fffd0b183091952c645f1) consultas de cliente · [`26a88de`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/26a88de14e62204404a984a405320539b183dd42) atualização de cliente · [`14a147b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/14a147bf0549cc4f415bb282573de8ca1d06a4ef) exclusão de cliente · [`8bd8d25`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/8bd8d253c3464ccd956e8cfabe51eb30876ac017) integração: cadastro e consulta · [`392edcd`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/392edcd0cbc915357bc9a3e4da052877adf449e3) integração: atualização e exclusão · [`3681901`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/368190102affde81d689b725c4f1f31b6067c5de) integração: ciclo completo |
-| Lucas da Costa | 0 | Em desenvolvimento |
+| Lucas da Costa | 7 | [`10eb6c0`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/10eb6c0) enum StatusPedido · [`6886668`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/6886668) ItemPedido e subtotal · [`717d893`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/717d893) testes de ItemPedido · [`d249272`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/d249272) Pedido e cálculo do total · [`b01bba3`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/b01bba3) testes do total do pedido · [`f7b4b2f`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f7b4b2f) PedidoRepository em memória · [`669835e`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/669835e) testes do repositório de pedidos |
 | Murilo dos Santos Ferreira | 0 | Em desenvolvimento |
 
 > As tabelas são atualizadas a cada entrega. Só são considerados commits que alteram código-fonte (`src/`) na branch `main`.
