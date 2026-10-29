@@ -1,6 +1,7 @@
 package br.unisul.lanchonete.service;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import br.unisul.lanchonete.model.Produto;
 import br.unisul.lanchonete.repository.ProdutoRepository;
@@ -27,6 +28,27 @@ public class ProdutoService {
         validar(produto);
 
         return repository.salvar(produto);
+    }
+
+    /**
+     * Busca um produto pelo id.
+     *
+     * @param id id do produto
+     * @return o produto encontrado
+     * @throws ProdutoNaoEncontradoException se não existir produto com o id
+     */
+    public Produto buscarPorId(Long id) {
+        return repository.buscarPorId(id)
+                .orElseThrow(() -> new ProdutoNaoEncontradoException("Produto não encontrado com id: " + id));
+    }
+
+    /**
+     * Lista todos os produtos cadastrados.
+     *
+     * @return lista de produtos, vazia se não houver nenhum
+     */
+    public List<Produto> listarTodos() {
+        return repository.listarTodos();
     }
 
     private void validar(Produto produto) {
