@@ -3,6 +3,7 @@ package br.unisul.lanchonete.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -10,6 +11,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -140,5 +143,48 @@ class ProdutoServiceTest {
 
         assertSame(salvo, resultado);
         verify(repository, times(1)).salvar(produto);
+    }
+
+    @Test
+    void deveBuscarProdutoExistentePorId() {
+        Produto existente = new Produto(NOME, CATEGORIA, PRECO, ESTOQUE);
+        existente.setId(1L);
+        when(repository.buscarPorId(1L)).thenReturn(Optional.of(existente));
+
+        Produto resultado = service.buscarPorId(1L);
+
+        assertSame(existente, resultado);
+    }
+
+    @Test
+    void deveLancarExcecaoAoBuscarIdInexistente() {
+        when(repository.buscarPorId(99L)).thenReturn(Optional.empty());
+
+        ProdutoNaoEncontradoException erro = assertThrows(ProdutoNaoEncontradoException.class,
+                () -> service.buscarPorId(99L));
+
+        assertTrue(erro.getMessage().contains("99"));
+    }
+
+    @Test
+    void deveRetornarListaVaziaQuandoNaoHaProdutos() {
+        when(repository.listarTodos()).thenReturn(List.of());
+
+        List<Produto> resultado = service.listarTodos();
+
+        assertTrue(resultado.isEmpty());
+    }
+
+    @Test
+    void deveListarTodosOsProdutosDoRepositorio() {
+        Produto xBurguer = new Produto(NOME, CATEGORIA, PRECO, ESTOQUE);
+        xBurguer.setId(1L);
+        Produto refrigerante = new Produto("Refrigerante", "Bebida", new BigDecimal("6.00"), 20);
+        refrigerante.setId(2L);
+        when(repository.listarTodos()).thenReturn(List.of(xBurguer, refrigerante));
+
+        List<Produto> resultado = service.listarTodos();
+
+        assertEquals(List.of(xBurguer, refrigerante), resultado);
     }
 }
