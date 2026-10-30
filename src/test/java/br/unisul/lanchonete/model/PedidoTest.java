@@ -113,7 +113,7 @@ class PedidoTest {
         Pedido primeiro = new Pedido(1L);
         Pedido segundo = new Pedido(1L);
 
-        assertEquals(primeiro, primeiro);
+        assertEquals(true, primeiro.equals(primeiro));
         assertNotEquals(primeiro, segundo);
     }
 
