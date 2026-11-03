@@ -141,4 +141,50 @@ class EstoqueServiceTest {
 
         verify(repository, never()).salvar(any());
     }
+
+    @Test
+    void deveReporSomandoQuantidadeAoSaldoEChamarSalvar() {
+        Produto produto = criarProduto(10);
+        when(repository.buscarPorId(PRODUTO_ID)).thenReturn(Optional.of(produto));
+        ArgumentCaptor<Produto> captor = ArgumentCaptor.forClass(Produto.class);
+
+        service.repor(PRODUTO_ID, 5);
+
+        verify(repository, times(1)).salvar(captor.capture());
+        assertEquals(15, captor.getValue().getQuantidadeEstoque());
+    }
+
+    @Test
+    void deveReporEmProdutoComEstoqueZeroDeixandoSaldoIgualAQuantidadeReposta() {
+        Produto produto = criarProduto(0);
+        when(repository.buscarPorId(PRODUTO_ID)).thenReturn(Optional.of(produto));
+        ArgumentCaptor<Produto> captor = ArgumentCaptor.forClass(Produto.class);
+
+        service.repor(PRODUTO_ID, 8);
+
+        verify(repository, times(1)).salvar(captor.capture());
+        assertEquals(8, captor.getValue().getQuantidadeEstoque());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void deveReporRejeitarQuantidadeZeroOuNegativaSemChamarSalvarNemAlterarSaldo(int quantidade) {
+        Produto produto = criarProduto(10);
+
+        assertThrows(IllegalArgumentException.class, () -> service.repor(PRODUTO_ID, quantidade));
+
+        assertEquals(10, produto.getQuantidadeEstoque());
+        verify(repository, never()).salvar(any());
+    }
+
+    @Test
+    void deveReporLancarExcecaoQuandoProdutoNaoExistirSemChamarSalvar() {
+        when(repository.buscarPorId(PRODUTO_ID)).thenReturn(Optional.empty());
+
+        ProdutoNaoEncontradoException erro = assertThrows(ProdutoNaoEncontradoException.class,
+                () -> service.repor(PRODUTO_ID, 5));
+
+        assertTrue(erro.getMessage().contains(String.valueOf(PRODUTO_ID)));
+        verify(repository, never()).salvar(any());
+    }
 }
