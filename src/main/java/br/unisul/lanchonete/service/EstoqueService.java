@@ -52,6 +52,22 @@ public class EstoqueService {
         repository.salvar(produto);
     }
 
+    /**
+     * Repõe o estoque do produto, somando a quantidade informada.
+     *
+     * @param produtoId id do produto
+     * @param quantidade quantidade a ser reposta
+     * @throws IllegalArgumentException se a quantidade não for maior que zero
+     * @throws ProdutoNaoEncontradoException se não existir produto com o id
+     */
+    public void repor(Long produtoId, int quantidade) {
+        validarQuantidade(quantidade);
+        Produto produto = buscarProduto(produtoId);
+
+        produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() + quantidade);
+        repository.salvar(produto);
+    }
+
     private void validarQuantidade(int quantidade) {
         if (quantidade <= 0) {
             throw new IllegalArgumentException("A quantidade deve ser maior que zero.");
