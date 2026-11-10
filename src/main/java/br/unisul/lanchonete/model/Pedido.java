@@ -42,13 +42,31 @@ public class Pedido {
         return status;
     }
 
+    // Fluxo permitido (README): ABERTO -> CONFIRMADO, ABERTO -> CANCELADO, CONFIRMADO -> CANCELADO.
     public void setStatus(StatusPedido status) {
+        if (status == null) {
+            throw new IllegalArgumentException("O status do pedido não pode ser nulo.");
+        }
+        if (this.status == StatusPedido.CANCELADO) {
+            throw new IllegalStateException("Um pedido cancelado não pode ter o status alterado.");
+        }
+        if (this.status == StatusPedido.CONFIRMADO && status != StatusPedido.CANCELADO) {
+            throw new IllegalStateException(
+                    "Um pedido confirmado só pode ser cancelado (tentativa: CONFIRMADO -> " + status + ").");
+        }
+        if (this.status == StatusPedido.ABERTO && status == StatusPedido.ABERTO) {
+            throw new IllegalStateException("O pedido já está ABERTO.");
+        }
         this.status = status;
     }
 
     public void adicionarItem(ItemPedido item) {
         if (item == null) {
             throw new IllegalArgumentException("O item do pedido é obrigatório.");
+        }
+        if (this.status != StatusPedido.ABERTO) {
+            throw new IllegalStateException(
+                    "Não é permitido adicionar itens a um pedido fechado (status atual: " + this.status + ").");
         }
         itens.add(item);
     }
