@@ -87,6 +87,124 @@ class PedidoTest {
         assertEquals(StatusPedido.CONFIRMADO, pedido.getStatus());
     }
 
+    // ---------- Issue #18: transições de status ----------
+
+    // Cria um pedido com um item (12.50) já no status desejado, seguindo o fluxo válido.
+    private Pedido pedidoComUmItemNoStatus(StatusPedido status) {
+        Pedido pedido = new Pedido(1L);
+        pedido.adicionarItem(new ItemPedido(10L, "X-Salada", 1, new BigDecimal("12.50")));
+        if (status != StatusPedido.ABERTO) {
+            pedido.setStatus(status);
+        }
+        return pedido;
+    }
+
+    @Test
+    void deveLancarErroAoDefinirStatusNulo() {
+        Pedido pedido = new Pedido(1L);
+
+        IllegalArgumentException erro = assertThrows(IllegalArgumentException.class,
+                () -> pedido.setStatus(null));
+
+        assertEquals("O status do pedido não pode ser nulo.", erro.getMessage());
+        assertEquals(StatusPedido.ABERTO, pedido.getStatus());
+    }
+
+    @Test
+    void devePermitirCancelarPedidoAberto() {
+        Pedido pedido = new Pedido(1L);
+
+        pedido.setStatus(StatusPedido.CANCELADO);
+
+        assertEquals(StatusPedido.CANCELADO, pedido.getStatus());
+    }
+
+    @Test
+    void naoDevePermitirAbertoParaAberto() {
+        Pedido pedido = new Pedido(1L);
+
+        assertThrows(IllegalStateException.class, () -> pedido.setStatus(StatusPedido.ABERTO));
+        assertEquals(StatusPedido.ABERTO, pedido.getStatus());
+    }
+
+    @Test
+    void devePermitirCancelarPedidoConfirmado() {
+        Pedido pedido = pedidoComUmItemNoStatus(StatusPedido.CONFIRMADO);
+
+        pedido.setStatus(StatusPedido.CANCELADO);
+
+        assertEquals(StatusPedido.CANCELADO, pedido.getStatus());
+    }
+
+    @Test
+    void naoDevePermitirConfirmadoParaAberto() {
+        Pedido pedido = pedidoComUmItemNoStatus(StatusPedido.CONFIRMADO);
+
+        assertThrows(IllegalStateException.class, () -> pedido.setStatus(StatusPedido.ABERTO));
+        assertEquals(StatusPedido.CONFIRMADO, pedido.getStatus());
+    }
+
+    @Test
+    void naoDevePermitirConfirmarPedidoJaConfirmado() {
+        Pedido pedido = pedidoComUmItemNoStatus(StatusPedido.CONFIRMADO);
+
+        assertThrows(IllegalStateException.class, () -> pedido.setStatus(StatusPedido.CONFIRMADO));
+        assertEquals(StatusPedido.CONFIRMADO, pedido.getStatus());
+    }
+
+    @Test
+    void naoDevePermitirConfirmarPedidoCancelado() {
+        Pedido pedido = pedidoComUmItemNoStatus(StatusPedido.CANCELADO);
+
+        IllegalStateException erro = assertThrows(IllegalStateException.class,
+                () -> pedido.setStatus(StatusPedido.CONFIRMADO));
+
+        assertEquals("Um pedido cancelado não pode ter o status alterado.", erro.getMessage());
+        assertEquals(StatusPedido.CANCELADO, pedido.getStatus());
+    }
+
+    @Test
+    void naoDevePermitirCancelarPedidoJaCancelado() {
+        Pedido pedido = pedidoComUmItemNoStatus(StatusPedido.CANCELADO);
+
+        assertThrows(IllegalStateException.class, () -> pedido.setStatus(StatusPedido.CANCELADO));
+        assertEquals(StatusPedido.CANCELADO, pedido.getStatus());
+    }
+
+    @Test
+    void naoDevePermitirReabrirPedidoCancelado() {
+        Pedido pedido = pedidoComUmItemNoStatus(StatusPedido.CANCELADO);
+
+        assertThrows(IllegalStateException.class, () -> pedido.setStatus(StatusPedido.ABERTO));
+        assertEquals(StatusPedido.CANCELADO, pedido.getStatus());
+    }
+
+    // ---------- Issue #18: itens em pedido fechado ----------
+
+    @Test
+    void naoDeveAdicionarItemEmPedidoConfirmado() {
+        Pedido pedido = pedidoComUmItemNoStatus(StatusPedido.CONFIRMADO);
+        ItemPedido novoItem = new ItemPedido(20L, "Refrigerante", 2, new BigDecimal("8.90"));
+
+        assertThrows(IllegalStateException.class, () -> pedido.adicionarItem(novoItem));
+
+        assertEquals(1, pedido.getItens().size());
+        assertEquals(0, new BigDecimal("12.50").compareTo(pedido.getTotal()));
+    }
+
+    @Test
+    void naoDeveAdicionarItemEmPedidoCancelado() {
+        Pedido pedido = pedidoComUmItemNoStatus(StatusPedido.CANCELADO);
+        ItemPedido novoItem = new ItemPedido(20L, "Refrigerante", 2, new BigDecimal("8.90"));
+
+        assertThrows(IllegalStateException.class, () -> pedido.adicionarItem(novoItem));
+
+        assertEquals(1, pedido.getItens().size());
+        assertEquals(0, new BigDecimal("12.50").compareTo(pedido.getTotal()));
+    }
+
+    // ---------- equals / hashCode / toString ----------
+
     @Test
     void pedidosComMesmoIdDevemSerIguaisETerMesmoHashCode() {
         Pedido primeiro = new Pedido(1L);
