@@ -45,12 +45,12 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 
 | ID | Requisito | Status |
 |---|---|---|
-| RF01 | Cadastrar, consultar, atualizar e excluir produtos | ⏳ Planejado |
+| RF01 | Cadastrar, consultar, atualizar e excluir produtos | ✅ Implementado |
 | RF02 | Cadastrar, consultar, atualizar e excluir clientes | ✅ Implementado |
-| RF03 | Criar pedidos com um ou mais itens e acompanhar o status | ⏳ Planejado |
-| RF04 | Cancelar pedidos | ⏳ Planejado |
-| RF05 | Controlar entradas e saídas de estoque | ⏳ Planejado |
-| RF06 | Dar baixa automática no estoque ao confirmar um pedido | ⏳ Planejado |
+| RF03 | Criar pedidos com um ou mais itens e acompanhar o status | ✅ Implementado |
+| RF04 | Cancelar pedidos | ✅ Implementado |
+| RF05 | Controlar entradas e saídas de estoque | ✅ Implementado |
+| RF06 | Dar baixa automática no estoque ao confirmar um pedido | ✅ Implementado |
 | RF07 | Autenticar funcionários por login e senha | ⏳ Planejado |
 | RF08 | Registrar o pagamento do pedido | ⏳ Planejado |
 | RF09 | Gerar relatórios de vendas e de estoque | ⏳ Planejado |
@@ -82,13 +82,16 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 - Módulo Clientes: entidade, repositório em memória, validação de CPF, cadastro com validação de campos e bloqueio de CPF duplicado, consulta por id e por CPF, listagem, atualização e exclusão
 - Docker: `Dockerfile` multi-stage (build com testes e cobertura; execução só com JRE) e `docker-compose.yml`
 - Análise estática e Quality Gate integrados ao SonarCloud via GitHub Actions
-- Módulo Pedidos (Modelo e Repositório): enum `StatusPedido`, `ItemPedido` (com cálculo de subtotal), `Pedido` (com cálculo de total e lista imutável de itens) e `PedidoRepositoryEmMemoria`
+- Módulo Produtos: entidade `Produto`, `ProdutoRepository` e `ProdutoRepositoryEmMemoria`, `ProdutoService` (cadastro com validação de nome, categoria, preço e estoque; consulta por id e listagem) e `ProdutoNaoEncontradoException`
+- Módulo Estoque: `EstoqueService` com verificação de saldo (`possuiEstoque`), baixa (`darBaixa`, que lança `EstoqueInsuficienteException`) e reposição (`repor`)
+- Módulo Pedidos completo: enum `StatusPedido`, `ItemPedido` (com cálculo de subtotal), `Pedido` (com cálculo de total, lista imutável de itens e bloqueio de transições inválidas), `PedidoRepositoryEmMemoria` e `PedidoService` (criação, adição de itens, confirmação com baixa de todos os itens sem baixa parcial e cancelamento com reposição)
+- Testes de integração do fluxo de pedidos (`PedidoServiceIntegracaoTest`, com `@Tag("integracao")`), usando os serviços e repositórios em memória reais
+- Execução demonstrativa do fluxo completo em `App.main`: cadastro, pedido confirmado com baixa, pedido recusado sem baixa parcial e cancelamento com reposição
 
 **Planejado**
 
 - Banco de dados e testes de integração com H2
-- Interface e camada de entrada (`controller/`), incluindo a execução pela linha de comando
-- Módulos de Produtos, Estoque, Serviço de Pedidos (`PedidoService`), Pagamento, Funcionários (login) e Relatórios
+- Módulos de Funcionários (login), Pagamento e Relatórios
 - Documentação em `docs/` (UML, BPM e plano de testes)
 
 ## 🔄 Fluxo principal e critérios de aceitação
@@ -97,9 +100,9 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 
 **Critérios de aceitação:**
 
-- [ ] Pedido com estoque suficiente é criado e o estoque diminui na quantidade exata.
-- [ ] Pedido com estoque insuficiente é rejeitado com mensagem clara e sem alterar o estoque.
-- [ ] Pedido cancelado devolve os itens ao estoque.
+- [x] Pedido com estoque suficiente é criado e o estoque diminui na quantidade exata.
+- [x] Pedido com estoque insuficiente é rejeitado com mensagem clara e sem alterar o estoque.
+- [x] Pedido cancelado devolve os itens ao estoque.
 - [x] Valor total do pedido é igual à soma de `quantidade × preço unitário` dos itens.
 - [ ] Login com credenciais inválidas é negado.
 
@@ -155,7 +158,7 @@ CONFIRMADO ──cancelar───▶ CANCELADO
 | Reposição com quantidade zero ou negativa é recusada | `deveRecusarReposicaoComQuantidadeMenorOuIgualAZero` |
 | Reposição de produto inexistente é recusada | `deveRecusarReposicaoDeProdutoInexistente` |
 
-> As regras acima estão definidas; a implementação está em andamento no módulo de Pedidos.
+> Todas as regras acima estão implementadas e validadas por testes unitários e de integração em `EstoqueServiceTest`, `PedidoServiceTest` e `PedidoServiceIntegracaoTest`.
 
 ## 🛠 Tecnologias
 
@@ -246,9 +249,14 @@ cd System-Lanchonete
 
 # 2. Compilar, baixar dependências e rodar os testes
 mvn clean install
+
+# 3. Executar a demonstração do fluxo de pedidos
+java -jar target/sistema-lanchonete.jar
 ```
 
-> **Observação:** a execução do fluxo de pedidos pela linha de comando está planejada e ainda não está disponível.
+A execução (`App.main`) roda uma demonstração completa do fluxo, sem pedir entrada pelo teclado. Ela cadastra cliente e produtos, confirma um pedido com baixa automática no estoque, recusa um pedido acima do estoque sem baixa parcial e cancela o pedido confirmado com reposição dos itens. O passo a passo e os saldos de estoque são impressos no console. O contêiner Docker executa a mesma demonstração.
+
+> **Windows:** se os acentos aparecerem trocados no terminal, use `java -Dstdout.encoding=UTF-8 -jar target/sistema-lanchonete.jar`.
 
 ### Com Docker (sem instalar Java ou Maven)
 
@@ -298,7 +306,7 @@ mvn test -Dgroups=integracao
 | **Sistema** *(planejado)* | Fluxo completo de pedido |
 | **Usabilidade** *(planejado)* | Roteiro de avaliação com o protótipo |
 
-Total atual: **90 métodos de teste** e **110 execuções** (contando os casos dos testes parametrizados).
+Total atual: **183 métodos de teste** e **213 execuções** (contando os casos dos testes parametrizados).
 
 A cobertura mínima de 75% de linhas já é exigida no build: o `mvn verify` falha se a cobertura ficar abaixo disso.
 
@@ -457,15 +465,22 @@ git push origin --delete feat/produto
 | Lucas da Costa | Entidade [`ItemPedido`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/model/ItemPedido.java) com validações e cálculo de subtotal | [`ItemPedidoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/model/ItemPedidoTest.java) |
 | Lucas da Costa | Entidade [`Pedido`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/model/Pedido.java) com controle de status e cálculo do total | [`PedidoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/model/PedidoTest.java) |
 | Lucas da Costa | Interface [`PedidoRepository`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/repository/PedidoRepository.java) e [`PedidoRepositoryEmMemoria`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/repository/PedidoRepositoryEmMemoria.java) | [`PedidoRepositoryEmMemoriaTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/repository/PedidoRepositoryEmMemoriaTest.java) |
-| Murilo dos Santos Ferreira | Produto e Estoque (em desenvolvimento) | Em desenvolvimento |
+| Lucas da Costa | Bloqueio de transições inválidas de status e de adição de itens em pedido fechado (Issue #18) | [`PedidoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/model/PedidoTest.java) |
+| Lucas da Costa | [`PedidoService`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/service/PedidoService.java): criação, adição de itens, confirmação com baixa sem baixa parcial e cancelamento com reposição | [`PedidoServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/PedidoServiceTest.java) |
+| Lucas da Costa | Testes de integração do fluxo de pedidos (serviços + repositórios em memória reais) | [`PedidoServiceIntegracaoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/PedidoServiceIntegracaoTest.java) |
+| Lucas da Costa | Consolidação da execução em [`App`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/App.java): demonstração do fluxo completo de pedidos e estoque | [`AppTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/AppTest.java) |
+| Murilo dos Santos Ferreira | Entidade [`Produto`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/model/Produto.java) | [`ProdutoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/model/ProdutoTest.java) |
+| Murilo dos Santos Ferreira | Interface [`ProdutoRepository`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/repository/ProdutoRepository.java) e [`ProdutoRepositoryEmMemoria`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/repository/ProdutoRepositoryEmMemoria.java) | [`ProdutoRepositoryEmMemoriaTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/repository/ProdutoRepositoryEmMemoriaTest.java) |
+| Murilo dos Santos Ferreira | [`ProdutoService`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/service/ProdutoService.java): cadastro com validações, consulta por id e listagem, com [`ProdutoNaoEncontradoException`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/service/ProdutoNaoEncontradoException.java) | [`ProdutoServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ProdutoServiceTest.java) |
+| Murilo dos Santos Ferreira | [`EstoqueService`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/service/EstoqueService.java): verificação, baixa e reposição de estoque, com [`EstoqueInsuficienteException`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/service/EstoqueInsuficienteException.java) | [`EstoqueServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/EstoqueServiceTest.java) |
 
 ### Commits por integrante
 
 | Aluno | Commits de código-fonte | Principais commits |
 |---|---|---|
 | Carlos Henrique Lohn | 20 | [`97ff666`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/97ff66691358fd1dd6735c014b0fcfa4d9aa4c34) entidade Cliente · [`c06a33a`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/c06a33a41d125cbb38c5c1677f2b1d10950bfdb3) validação de CPF · [`f75f94b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f75f94b565a474e58e55ec2e69e82891a5bcb158) repositório em memória · [`e3aaf31`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/e3aaf314eafd422a6c9bf9dd6d4adbb8fb76b664) cadastro com validações · [`11b1414`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/11b14142cdb581c42c16bd38b8992cb94ef3d6f3) bloqueio de CPF duplicado · [`dc7b364`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/dc7b3644668b51f80e6fffd0b183091952c645f1) consultas de cliente · [`26a88de`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/26a88de14e62204404a984a405320539b183dd42) atualização de cliente · [`14a147b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/14a147bf0549cc4f415bb282573de8ca1d06a4ef) exclusão de cliente · [`8bd8d25`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/8bd8d253c3464ccd956e8cfabe51eb30876ac017) integração: cadastro e consulta · [`392edcd`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/392edcd0cbc915357bc9a3e4da052877adf449e3) integração: atualização e exclusão · [`3681901`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/368190102affde81d689b725c4f1f31b6067c5de) integração: ciclo completo |
-| Lucas da Costa | 7 | [`10eb6c0`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/10eb6c0) enum StatusPedido · [`6886668`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/6886668) ItemPedido e subtotal · [`717d893`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/717d893) testes de ItemPedido · [`d249272`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/d249272) Pedido e cálculo do total · [`b01bba3`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/b01bba3) testes do total do pedido · [`f7b4b2f`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f7b4b2f) PedidoRepository em memória · [`669835e`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/669835e) testes do repositório de pedidos |
-| Murilo dos Santos Ferreira | 0 | Em desenvolvimento |
+| Lucas da Costa | 14 | [`10eb6c0`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/10eb6c0c0ae625fb9d2948029102e0fa45d4153e) enum StatusPedido · [`6886668`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/68866680d42c62e04c33972d2628400784479cda) ItemPedido e subtotal · [`d249272`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/d249272f4e1f9b7271ddf04429555da2832cf1a6) Pedido e cálculo do total · [`f7b4b2f`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f7b4b2f7541920c37953de5cc66f8e4a7c0d3f0d) PedidoRepository em memória · [`a890e28`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/a890e28d75ad3d5417292e670ed99921ab815f62) correção apontada pelo SonarCloud · [`8cef0bf`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/8cef0bfc7f0839ff1ce2ab8632184f8ecd26ba1a) bloqueio de transições inválidas · [`73ec46f`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/73ec46fab06e5eaf7c8139b6752889ed8dc21eb3) PedidoService · [`75fc190`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/75fc19030967b2e047f080b73a6a114b61b27f28) testes unitários do PedidoService · [`eea6958`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/eea69585328476ebee8186e140465178b447149b) testes de integração do fluxo de pedidos · [`b03482b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/b03482b359badcb5d68517027a5162885d53abbc) fluxo demonstrativo no App.main |
+| Murilo dos Santos Ferreira | 14 | [`95fb48e`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/95fb48e43ef85e5e65fd56ac7d350eae78aebc67) entidade Produto · [`0d29a26`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/0d29a26383c05bb61e0df3b10e767de141312937) interface ProdutoRepository · [`881adb7`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/881adb7c4baa9826673e1f68add57ca670472706) repositório de produtos em memória · [`295ea70`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/295ea7017b93f4ecdba28f367c72443c28546b60) cadastro de produto com validações · [`1fdea1e`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/1fdea1ef0d8b981af5e2113d13663344cae94db0) consultas de produto · [`397bf08`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/397bf08743a81240a409df3a5e395b7a0cbde88a) EstoqueInsuficienteException · [`1aced49`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/1aced49627af460cdef6b30836bf3168fa04bb8d) verificação e baixa de estoque · [`af6021c`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/af6021cb9f40ccaf0af2e33afc5981d230e02fd5) reposição de estoque · [`bd019f8`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/bd019f82419d84d2d6c08ed75897f26f6fc4b747) testes de reposição de estoque |
 
 > As tabelas são atualizadas a cada entrega. Só são considerados commits que alteram código-fonte (`src/`) na branch `main`.
 
