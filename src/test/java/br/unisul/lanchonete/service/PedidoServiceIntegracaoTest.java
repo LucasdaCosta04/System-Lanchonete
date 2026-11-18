@@ -4,6 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.spy;
 
 import java.math.BigDecimal;
 
@@ -34,7 +38,9 @@ class PedidoServiceIntegracaoTest {
     private static final int ESTOQUE_BEBIDA = 2;
     private static final int ESTOQUE_BATATA = 5;
 
+    private ClienteRepositoryEmMemoria clienteRepository;
     private ProdutoRepositoryEmMemoria produtoRepository;
+    private PedidoRepositoryEmMemoria pedidoRepository;
     private PedidoService pedidoService;
 
     private Long clienteId;
@@ -44,9 +50,9 @@ class PedidoServiceIntegracaoTest {
 
     @BeforeEach
     void montarSistemaComDadosIniciais() {
-        ClienteRepositoryEmMemoria clienteRepository = new ClienteRepositoryEmMemoria();
+        clienteRepository = new ClienteRepositoryEmMemoria();
         produtoRepository = new ProdutoRepositoryEmMemoria();
-        PedidoRepositoryEmMemoria pedidoRepository = new PedidoRepositoryEmMemoria();
+        pedidoRepository = new PedidoRepositoryEmMemoria();
 
         ClienteService clienteService = new ClienteService(clienteRepository);
         ProdutoService produtoService = new ProdutoService(produtoRepository);
@@ -110,6 +116,34 @@ class PedidoServiceIntegracaoTest {
                 // O X-Burguer tinha estoque, mas não pode ter sofrido baixa.
                 () -> assertEquals(ESTOQUE_LANCHE, saldo(lancheId)),
                 () -> assertEquals(ESTOQUE_BEBIDA, saldo(bebidaId)));
+    }
+
+    // ---------- 2.1. Regressão da Issue #22: falha na segunda baixa ----------
+
+    @Test
+    void deveDesfazerPrimeiraBaixaQuandoSegundaBaixaFalharNaConfirmacao() {
+        // Estoque real, mas com a segunda chamada de darBaixa forçada a falhar.
+        // A primeira baixa roda de verdade e desconta 2 X-Burguer no repositório.
+        EstoqueService estoqueComFalha = spy(new EstoqueService(produtoRepository));
+        doCallRealMethod()
+                .doThrow(new EstoqueInsuficienteException("Falha simulada na segunda baixa."))
+                .when(estoqueComFalha).darBaixa(anyLong(), anyInt());
+        PedidoService servicoComFalha = new PedidoService(
+                pedidoRepository, clienteRepository, produtoRepository, estoqueComFalha);
+
+        Long pedidoId = servicoComFalha.criarPedido(clienteId).getId();
+        servicoComFalha.adicionarItem(pedidoId, lancheId, 2);
+        servicoComFalha.adicionarItem(pedidoId, bebidaId, 1);
+
+        EstoqueInsuficienteException erro = assertThrows(EstoqueInsuficienteException.class,
+                () -> servicoComFalha.confirmar(pedidoId));
+
+        assertAll(
+                () -> assertEquals("Falha simulada na segunda baixa.", erro.getMessage()),
+                // As 2 unidades baixadas do X-Burguer voltaram ao estoque.
+                () -> assertEquals(ESTOQUE_LANCHE, saldo(lancheId)),
+                () -> assertEquals(ESTOQUE_BEBIDA, saldo(bebidaId)),
+                () -> assertEquals(StatusPedido.ABERTO, servicoComFalha.buscarPorId(pedidoId).getStatus()));
     }
 
     // ---------- 3. Cancelamento de pedido CONFIRMADO ----------

@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -294,6 +296,33 @@ class PedidoServiceTest {
 
         assertEquals("Pedido não confirmado: estoque insuficiente para o produto 'Refrigerante'.",
                 erro.getMessage());
+    }
+
+    @Test
+    void deveDesfazerBaixasJaFeitasQuandoSegundaBaixaFalhar() {
+        Pedido pedido = criarPedidoComItens();
+        prepararBusca(pedido);
+        when(estoqueService.possuiEstoque(LANCHE_ID, 2)).thenReturn(true);
+        when(estoqueService.possuiEstoque(BEBIDA_ID, 3)).thenReturn(true);
+        // A primeira baixa (2 X-Burguer) passa; a segunda (Refrigerante) falha.
+        EstoqueInsuficienteException falha = new EstoqueInsuficienteException("Falha simulada na segunda baixa.");
+        doNothing().when(estoqueService).darBaixa(LANCHE_ID, 2);
+        doThrow(falha).when(estoqueService).darBaixa(BEBIDA_ID, 3);
+
+        EstoqueInsuficienteException erro = assertThrows(EstoqueInsuficienteException.class,
+                () -> service.confirmar(PEDIDO_ID));
+
+        // A exceção original é relançada sem alteração.
+        assertSame(falha, erro);
+        assertEquals(StatusPedido.ABERTO, pedido.getStatus());
+
+        // A baixa do X-Burguer é desfeita depois da falha; o Refrigerante não é reposto, pois nunca foi baixado.
+        InOrder ordem = inOrder(estoqueService);
+        ordem.verify(estoqueService).darBaixa(LANCHE_ID, 2);
+        ordem.verify(estoqueService).darBaixa(BEBIDA_ID, 3);
+        ordem.verify(estoqueService).repor(LANCHE_ID, 2);
+        verify(estoqueService, never()).repor(BEBIDA_ID, 3);
+        verify(pedidoRepository, never()).salvar(any());
     }
 
     @Test
