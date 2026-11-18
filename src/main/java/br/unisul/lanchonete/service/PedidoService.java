@@ -1,5 +1,6 @@
 package br.unisul.lanchonete.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -102,6 +103,8 @@ public class PedidoService {
      * Confirma um pedido ABERTO e dá baixa no estoque de todos os itens.
      * O estoque de todos os itens é verificado antes de qualquer baixa:
      * se algum faltar, nada é baixado e o pedido continua ABERTO.
+     * Se uma baixa falhar no meio do processo, as baixas já feitas são desfeitas
+     * com repor, garantindo que todas as baixas sejam aplicadas ou nenhuma.
      *
      * @param pedidoId id do pedido
      * @return o pedido confirmado
@@ -130,9 +133,17 @@ public class PedidoService {
             }
         }
 
-        // 2ª etapa: todos têm estoque, então dá baixa na quantidade exata de cada item.
-        for (ItemPedido item : pedido.getItens()) {
-            estoqueService.darBaixa(item.getProdutoId(), item.getQuantidade());
+        // 2ª etapa: dá baixa item a item, guardando cada baixa já feita.
+        // Se alguma baixa falhar, desfaz as anteriores (tudo ou nada) e o pedido continua ABERTO.
+        List<ItemPedido> itensBaixados = new ArrayList<>();
+        try {
+            for (ItemPedido item : pedido.getItens()) {
+                estoqueService.darBaixa(item.getProdutoId(), item.getQuantidade());
+                itensBaixados.add(item);
+            }
+        } catch (RuntimeException e) {
+            desfazerBaixas(itensBaixados);
+            throw e;
         }
 
         pedido.setStatus(StatusPedido.CONFIRMADO);
@@ -163,6 +174,14 @@ public class PedidoService {
 
         pedido.setStatus(StatusPedido.CANCELADO);
         return pedidoRepository.salvar(pedido);
+    }
+
+    // Devolve ao estoque cada item que já tinha recebido baixa. Como a lista guarda
+    // item a item, itens repetidos do mesmo produto também são devolvidos por completo.
+    private void desfazerBaixas(List<ItemPedido> itensBaixados) {
+        for (ItemPedido item : itensBaixados) {
+            estoqueService.repor(item.getProdutoId(), item.getQuantidade());
+        }
     }
 
     // Soma as quantidades de todos os itens do pedido que são do mesmo produto.
