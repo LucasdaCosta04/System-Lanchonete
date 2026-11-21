@@ -1,5 +1,9 @@
 # 🍔 Sistema de Gestão de Lanchonetes
 
+[![CI](https://github.com/LucasdaCosta04/System-Lanchonete/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/LucasdaCosta04/System-Lanchonete/actions/workflows/ci.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=LucasdaCosta04_System-Lanchonete&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=LucasdaCosta04_System-Lanchonete)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=LucasdaCosta04_System-Lanchonete&metric=coverage)](https://sonarcloud.io/summary/new_code?id=LucasdaCosta04_System-Lanchonete)
+
 Sistema para gerenciar a operação de uma lanchonete: cadastro de produtos e clientes, pedidos e controle de estoque.
 
 Projeto desenvolvido para a **A3 da unidade curricular Gestão e Qualidade de Software**, UNISUL, sob orientação do professor Jorge Werner.
@@ -311,15 +315,18 @@ A cobertura mínima de 75% de linhas já é exigida no build: o `mvn verify` fal
 
 **Ferramenta:** SonarCloud, integrado ao Maven e ao GitHub Actions.
 
-**Passos de integração**
+**Painel:** [SonarCloud · LucasdaCosta04_System-Lanchonete](https://sonarcloud.io/summary/overall?id=LucasdaCosta04_System-Lanchonete)
 
-1. Criar a organização no SonarCloud a partir do GitHub e importar o repositório.
-2. Gerar o token e cadastrá-lo como secret `SONAR_TOKEN` no repositório.
-3. Configurar no `pom.xml` as propriedades `sonar.organization`, `sonar.projectKey` e o caminho do relatório XML do JaCoCo (`sonar.coverage.jacoco.xmlReportPaths`).
-4. Adicionar ao workflow uma etapa que roda `mvn verify sonar:sonar` após os testes.
-5. Desativar a "Automatic Analysis" do SonarCloud para usar a análise via CI.
+**Como foi integrado**
 
-**Quality Gate:** usar o padrão "Sonar way", que avalia o código novo:
+1. Organização `lucasdacosta04` criada no SonarCloud a partir do GitHub, com o repositório importado.
+2. Token cadastrado somente como secret `SONAR_TOKEN` do repositório (nunca em arquivos).
+3. Propriedades `sonar.organization`, `sonar.projectKey` e `sonar.coverage.jacoco.xmlReportPaths` configuradas no `pom.xml`, com a versão do `sonar-maven-plugin` fixada.
+4. Etapa **Análise SonarCloud** no workflow de CI, executada depois do `mvn verify`.
+5. "Automatic Analysis" desativada no SonarCloud, para que a análise venha só da CI.
+6. `sonar.qualitygate.wait=true` na etapa de análise: se o Quality Gate reprovar, a CI falha.
+
+**Quality Gate:** padrão "Sonar way", que avalia o código novo:
 
 - cobertura mínima de 80%;
 - no máximo 3% de linhas duplicadas;
@@ -332,18 +339,25 @@ A cobertura mínima de 75% de linhas já é exigida no build: o `mvn verify` fal
 
 **Processo de correção**
 
-- A primeira análise completa gera o registro "antes" (print do painel e lista de issues).
-- Cada issue é corrigida em um commit próprio (`fix:` ou `refactor:`), referenciando a regra do Sonar.
-- O problema encontrado e a solução aplicada são registrados no relatório da A3 (item 2.12).
-- Ao final, é feito um novo registro "depois", com o Quality Gate aprovado.
+- Cada issue é corrigida em um commit próprio (`fix:` ou `refactor:`), referenciando a regra do Sonar ou a issue do GitHub, por quem escreveu o código.
+- O problema encontrado e a solução aplicada são registrados no relatório da A3 (item 2.12), com os prints "antes" e "depois" do painel.
 
-**Cronograma**
+**Problemas encontrados e corrigidos**
 
-| Etapa | Período |
+| Problema | Origem | Solução | Commit |
+|---|---|---|---|
+| Asserção comparando o objeto com ele mesmo em `PedidoTest` (o teste não verificava nada) | SonarCloud `java:S5863` (Reliability) — reprovou o Quality Gate em 29/10 | Comparar com outro objeto de mesmo id, validando o `equals` | [`a890e28`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/a890e28) |
+| Pedido aceitava transições de status inválidas e itens depois de fechado | Revisão do fluxo de pedidos | Bloqueio das transições inválidas e da adição de itens em pedido fechado | [`8cef0bf`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/8cef0bf) |
+| Falha no meio da confirmação deixava baixas parciais de estoque | Issue #22 | Estorno das baixas já feitas quando uma baixa falha | [`137c050`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/137c050) |
+
+**Histórico**
+
+| Etapa | Data |
 |---|---|
-| Integração do SonarCloud | até 02/11 |
-| Primeira análise e registro "antes" | 03/11 a 09/11 |
-| Correção dos issues e registro "depois" | 10/11 a 16/11 |
+| Integração do SonarCloud à CI | 28/10 |
+| Primeira análise com Quality Gate reprovado (registro "antes") | 29/10 |
+| Correção do `java:S5863` | 29/10 |
+| Quality Gate passa a bloquear a CI | 21/11 |
 
 ## ⚙️ Integração contínua
 
@@ -362,7 +376,7 @@ O workflow `CI` (`.github/workflows/ci.yml`) roda a cada `push` e `pull request`
 2. **Construir imagem Docker**: `docker build -t sistema-lanchonete .`
 3. **Executar contêiner**: `docker run --rm sistema-lanchonete`
 
-**Análise no SonarCloud:** no job `build`, depois dos testes, a etapa **Análise SonarCloud** roda `mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar` com o secret `SONAR_TOKEN`, enviando o código e o relatório de cobertura do JaCoCo para validação do Quality Gate. Ela é executada em pull requests e em pushes na `main`, com cache em `~/.sonar/cache` (ver [Análise estática e Quality Gate](#análise-estática-e-quality-gate)).
+**Análise no SonarCloud:** no job `build`, depois dos testes, a etapa **Análise SonarCloud** roda `mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar` com o secret `SONAR_TOKEN`, enviando o código e o relatório de cobertura do JaCoCo para validação do Quality Gate. Com `-Dsonar.qualitygate.wait=true`, a etapa espera o resultado e **falha se o Quality Gate reprovar**. Ela é executada em pull requests e em pushes na `main`, com cache em `~/.sonar/cache` (ver [Análise estática e Quality Gate](#análise-estática-e-quality-gate)).
 
 ## ✍️ Convenção de commits
 
