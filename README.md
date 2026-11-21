@@ -1,6 +1,6 @@
 # 🍔 Sistema de Gestão de Lanchonetes
 
-Sistema para gerenciar a operação de uma lanchonete: cadastro de produtos, pedidos, controle de estoque, clientes, funcionários e relatórios.
+Sistema para gerenciar a operação de uma lanchonete: cadastro de produtos e clientes, pedidos e controle de estoque.
 
 Projeto desenvolvido para a **A3 da unidade curricular Gestão e Qualidade de Software**, UNISUL, sob orientação do professor Jorge Werner.
 
@@ -51,16 +51,18 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 | RF04 | Cancelar pedidos | ✅ Implementado |
 | RF05 | Controlar entradas e saídas de estoque | ✅ Implementado |
 | RF06 | Dar baixa automática no estoque ao confirmar um pedido | ✅ Implementado |
-| RF07 | Autenticar funcionários por login e senha | ⏳ Planejado |
-| RF08 | Registrar o pagamento do pedido | ⏳ Planejado |
-| RF09 | Gerar relatórios de vendas e de estoque | ⏳ Planejado |
+| RF07 | Autenticar funcionários por login e senha | 🚫 Fora do escopo |
+| RF08 | Registrar o pagamento do pedido | 🚫 Fora do escopo |
+| RF09 | Gerar relatórios de vendas e de estoque | 🚫 Fora do escopo |
+
+> RF07, RF08 e RF09 ficaram fora do escopo desta versão. A equipe priorizou o fluxo principal (pedido com baixa de estoque) e os critérios de qualidade da A3 (cobertura de 75% ou mais, Quality Gate aprovado e issues resolvidas). Esses requisitos estão registrados como trabalhos futuros.
 
 ### Não funcionais
 
 | ID | Requisito | Meta |
 |---|---|---|
 | RNF01 | **Usabilidade** | Fluxo de pedido concluído em poucos passos |
-| RNF02 | **Segurança** | Senhas armazenadas com hash (BCrypt); validação de entradas |
+| RNF02 | **Segurança** | Validação de entradas (campos obrigatórios, CPF, preços e quantidades); nenhum segredo no código |
 | RNF03 | **Desempenho** | Consultas comuns respondem em menos de 1 segundo |
 | RNF04 | **Qualidade** | Cobertura de testes ≥ 75% e aprovação no Quality Gate |
 | RNF05 | **Manutenibilidade** | Código modular, sem duplicações relevantes |
@@ -88,15 +90,16 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 - Testes de integração do fluxo de pedidos (`PedidoServiceIntegracaoTest`, com `@Tag("integracao")`), usando os serviços e repositórios em memória reais
 - Execução demonstrativa do fluxo completo em `App.main`: cadastro, pedido confirmado com baixa, pedido recusado sem baixa parcial e cancelamento com reposição
 
-**Planejado**
+**Fora do escopo desta versão (trabalhos futuros)**
 
-- Banco de dados e testes de integração com H2
-- Módulos de Funcionários (login), Pagamento e Relatórios
-- Documentação em `docs/` (UML, BPM e plano de testes)
+- Persistência em banco de dados: o enunciado da A3 a recomenda, mas não a exige. Os repositórios foram definidos como interfaces, o que permite trocar a implementação em memória por um banco sem alterar os serviços.
+- Módulos de Funcionários (login), Pagamento e Relatórios (RF07 a RF09)
+- Interface gráfica, camada `controller/` e protótipo no Figma
+- Documentação em `docs/`: o plano de testes e as evidências estão no relatório da A3
 
 ## 🔄 Fluxo principal e critérios de aceitação
 
-**Fluxo:** o atendente faz login → seleciona ou cadastra o cliente → adiciona produtos ao pedido → confirma → o estoque é atualizado → o pagamento é registrado.
+**Fluxo:** o atendente seleciona ou cadastra o cliente → adiciona produtos ao pedido → confirma → o estoque é atualizado. Se necessário, o pedido é cancelado e o estoque é reposto.
 
 **Critérios de aceitação:**
 
@@ -104,7 +107,6 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 - [x] Pedido com estoque insuficiente é rejeitado com mensagem clara e sem alterar o estoque.
 - [x] Pedido cancelado devolve os itens ao estoque.
 - [x] Valor total do pedido é igual à soma de `quantidade × preço unitário` dos itens.
-- [ ] Login com credenciais inválidas é negado.
 
 ### Regras de cancelamento e reposição de estoque
 
@@ -135,13 +137,13 @@ CONFIRMADO ──cancelar───▶ CANCELADO
 - Pedido ABERTO cancelado: o estoque não muda, porque nada foi baixado.
 - Pedido CONFIRMADO cancelado: as quantidades de todos os itens voltam ao estoque.
 - Pedido já CANCELADO não pode ser cancelado de novo; o sistema retorna um erro com mensagem clara.
-- Cancelamento após o pagamento (estorno) está fora do escopo atual e será tratado junto com o RF08.
+- Cancelamento após o pagamento (estorno) está fora do escopo, pois o registro de pagamento (RF08) não faz parte desta versão.
 
 **Reposição de estoque**
 
 - Feita pelo gerente, por meio de uma entrada de estoque.
 - A quantidade deve ser maior que zero e o produto deve existir.
-- O registro histórico de cada movimentação (entrada/saída) está planejado.
+- O registro histórico de cada movimentação (entrada/saída) fica fora do escopo desta versão.
 
 **Regra x teste**
 
@@ -174,12 +176,11 @@ CONFIRMADO ──cancelar───▶ CANCELADO
 | CI | GitHub Actions (`actions/checkout`, `actions/setup-java` com Temurin 21, `actions/upload-artifact`) | v5 / v5 / v5 | ✅ Em uso |
 | Contêiner | Docker (multi-stage: `maven:3.9-eclipse-temurin-21` no build e `eclipse-temurin:21-jre` na execução) | — | ✅ Em uso |
 | Persistência | Repositórios em memória | — | ✅ Em uso |
-| Persistência | Banco de dados relacional | — | ⏳ Planejado |
-| Testes | H2 (dependência de teste no `pom.xml`, ainda não usada nos testes) | 2.3.232 | ⏳ Planejado |
+| Persistência | Banco de dados relacional | — | 🚫 Fora do escopo |
 | Análise estática | SonarCloud | — | ✅ Em uso |
-| Prototipação | Figma (protótipo de interface) | — | ⏳ Planejado |
+| Prototipação | Figma (protótipo de interface) | — | 🚫 Fora do escopo |
 
-A stack foi definida pela equipe; a escolha do banco de dados será registrada aqui quando a persistência for implementada.
+A stack foi definida pela equipe. A persistência em banco de dados ficou fora do escopo desta versão; os dados são mantidos em repositórios em memória.
 
 ## 📁 Estrutura do repositório
 
@@ -188,19 +189,13 @@ A stack foi definida pela equipe; a escolha do banco de dados será registrada a
 ├── .github/
 │   └── workflows/
 │       └── ci.yml            # Pipeline: build, testes, cobertura mínima, SonarCloud e Docker
-├── docs/                     # planejado
-│   ├── uml/                  # planejado: casos de uso, classes e sequência
-│   ├── bpm/                  # planejado: fluxo de pedidos e estoque
-│   └── plano-de-testes/      # planejado: plano de testes e evidências
 ├── src/
 │   ├── main/
 │   │   ├── java/br/unisul/lanchonete/   # Código-fonte
 │   │   │   ├── App.java                 # Classe principal
 │   │   │   ├── model/                   # Entidades
 │   │   │   ├── repository/              # Acesso a dados
-│   │   │   ├── service/                 # Regras de negócio
-│   │   │   └── controller/              # planejado: camada de entrada
-│   │   └── resources/                   # planejado: configurações e scripts SQL
+│   │   │   └── service/                 # Regras de negócio
 │   └── test/
 │       └── java/br/unisul/lanchonete/   # Testes unitários e de integração
 │           ├── AppTest.java
@@ -208,9 +203,9 @@ A stack foi definida pela equipe; a escolha do banco de dados será registrada a
 │           ├── repository/
 │           └── service/
 ├── .dockerignore             # Arquivos excluídos do contexto de build da imagem
-├── .env.example              # Modelo das variáveis de ambiente (usadas quando houver banco)
+├── .env.example              # Modelo das variáveis de ambiente (reservado para uma futura persistência em banco)
 ├── .gitignore
-├── docker-compose.yml        # Serviço da aplicação (banco: planejado)
+├── docker-compose.yml        # Serviço da aplicação
 ├── Dockerfile                # Imagem multi-stage: build com testes e execução com JRE
 ├── LICENSE
 ├── pom.xml
@@ -223,14 +218,14 @@ A stack foi definida pela equipe; a escolha do banco de dados será registrada a
 |---|---|
 | **Produtos** | id, nome, categoria, preço, quantidadeEstoque (saldo atual do produto) |
 | **Clientes** | id, nome, cpf, telefone |
-| **Funcionários** | id, nome, cargo, login, senha (hash) |
+| **Funcionários** *(fora do escopo)* | id, nome, cargo, login, senha (hash) |
 | **Pedidos** | id, id_cliente, valor_total, status |
 | **Itens_Pedido** | id, id_pedido, id_produto, quantidade, preço_unitário |
-| **Estoque** (histórico de movimentações de entrada e saída) *(planejado)* | id, id_produto, quantidade_entrada, quantidade_saída |
+| **Estoque** (histórico de movimentações de entrada e saída) *(fora do escopo)* | id, id_produto, quantidade_entrada, quantidade_saída |
 
-> **Observação:** na versão atual, o saldo é controlado diretamente em `Produto.quantidadeEstoque` pelo `EstoqueService` (verificar, dar baixa e repor). O registro histórico de cada movimentação será implementado depois.
+> **Observação:** na versão atual, o saldo é controlado diretamente em `Produto.quantidadeEstoque` pelo `EstoqueService` (verificar, dar baixa e repor). O registro histórico de cada movimentação fica como trabalho futuro.
 
-**Relacionamentos:** um cliente tem vários pedidos; um pedido tem vários itens; cada item referencia um produto; quando o histórico for implementado, cada movimentação de estoque referenciará um produto.
+**Relacionamentos:** um cliente tem vários pedidos; um pedido tem vários itens; cada item referencia um produto.
 
 ## 🚀 Como executar
 
@@ -302,9 +297,9 @@ mvn test -Dgroups=integracao
 | Tipo | Escopo |
 |---|---|
 | **Unitários** | Regras de negócio e validações, com JUnit 5 e Mockito |
-| **Integração** | Serviço + repositório em memória real, sem mocks (H2: planejado) |
-| **Sistema** *(planejado)* | Fluxo completo de pedido |
-| **Usabilidade** *(planejado)* | Roteiro de avaliação com o protótipo |
+| **Integração** | Serviço + repositório em memória real, sem mocks |
+| **Sistema** | Fluxo completo de pedido executado pela `App` (`AppTest`): cadastro, confirmação com baixa, recusa sem baixa parcial e cancelamento com reposição |
+| **Usabilidade** *(fora do escopo)* | Não há interface gráfica nesta versão; a usabilidade é avaliada informalmente na demonstração do fluxo |
 
 Total atual: **185 métodos de teste** e **215 execuções** (contando os casos dos testes parametrizados).
 
@@ -491,7 +486,7 @@ git push origin --delete feat/produto
 |---|---|---|---|
 | _Lucas da Costa_ | Líder de equipe | Pedidos | [@LucasdaCosta04](https://github.com/LucasdaCosta04) |
 | _Carlos Henrique Lohn_ | Desenvolvedor | Clientes | [@carloshlohn](https://github.com/carloshlohn) |
-| _Murilo dos Santos Ferreira_ | Desenvolvedor | Produto e Estoque; depois Funcionários e Login | [@MuriloS-Ferreira](https://github.com/MuriloS-Ferreira) |
+| _Murilo dos Santos Ferreira_ | Desenvolvedor | Produto e Estoque | [@MuriloS-Ferreira](https://github.com/MuriloS-Ferreira) |
 
 **Curso:** _Ciência da Computação_ · **Semestre:** _6_ · **Professor:** Jorge Werner
 
