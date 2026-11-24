@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -123,9 +124,18 @@ class ArquivoEstaticoHandlerTest {
     }
 
     @Test
-    void nomeDoArquivoDeveTratarARaizComoPaginaInicial() {
-        assertEquals("index.html", ArquivoEstaticoHandler.nomeDoArquivo("/"));
-        assertEquals("app.js", ArquivoEstaticoHandler.nomeDoArquivo("/app.js"));
+    void arquivoDaRequisicaoDeveTratarARaizComoPaginaInicial() {
+        ArquivoEstaticoHandler.Arquivo raiz = ArquivoEstaticoHandler.arquivoDaRequisicao("/");
+
+        assertEquals("index.html", raiz.nome());
+        assertEquals("text/html; charset=utf-8", raiz.tipo());
+        assertEquals("app.js", ArquivoEstaticoHandler.arquivoDaRequisicao("/app.js").nome());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { "", "app.js", "/../app.js", "/web/app.js", "/style.css/" })
+    void arquivoDaRequisicaoDeveRetornarNullForaDaLista(String caminho) {
+        assertNull(ArquivoEstaticoHandler.arquivoDaRequisicao(caminho));
     }
 
     // ---------- Regras de qualidade dos arquivos da tela ----------
