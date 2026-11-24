@@ -1,0 +1,289 @@
+:root {
+  --cor-fundo: #f6f7fb;
+  --cor-cartao: #ffffff;
+  --cor-texto: #1f2937;
+  --cor-suave: #6b7280;
+  --cor-borda: #e5e7eb;
+  --cor-marca: #c2410c;
+  --cor-marca-escura: #9a3412;
+  --raio: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  line-height: 1.5;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+}
+
+h1,
+h2 {
+  margin: 0;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 1.4rem;
+}
+
+h2 {
+  margin-bottom: 12px;
+  font-size: 1.05rem;
+}
+
+/* Topo e abas */
+.topo {
+  border-bottom: 1px solid var(--cor-borda);
+  background: var(--cor-cartao);
+}
+
+.topo-conteudo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.subtitulo {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  color: var(--cor-suave);
+}
+
+.abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.aba {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  font: inherit;
+  color: var(--cor-suave);
+  background: transparent;
+  cursor: pointer;
+}
+
+.aba:hover {
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+}
+
+.aba.ativa {
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--cor-marca);
+}
+
+/* Estrutura */
+.conteudo {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.cartao {
+  margin-bottom: 16px;
+  padding: 20px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-cartao);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+}
+
+.cartao-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.resumos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.resumo-rotulo {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--cor-suave);
+}
+
+.resumo-valor {
+  margin: 4px 0 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* Formulários e botões */
+.formulario {
+  display: grid;
+  gap: 8px;
+}
+
+label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+select,
+input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  font: inherit;
+  background: #ffffff;
+}
+
+.botao {
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.botao-primario {
+  margin-top: 4px;
+  color: #ffffff;
+  background: var(--cor-marca);
+}
+
+.botao-primario:hover {
+  background: var(--cor-marca-escura);
+}
+
+.botao-confirmar {
+  color: #ffffff;
+  background: #15803d;
+}
+
+.botao-cancelar {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.botao-ver {
+  color: var(--cor-texto);
+  border-color: var(--cor-borda);
+  background: #ffffff;
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Tabelas */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+th,
+td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--cor-borda);
+  text-align: left;
+}
+
+thead th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--cor-suave);
+}
+
+tfoot th,
+tfoot td {
+  border-bottom: none;
+  font-weight: 700;
+}
+
+.numero {
+  text-align: right;
+}
+
+.vazio {
+  margin: 8px 0 0;
+  color: var(--cor-suave);
+}
+
+/* Badges de status e saldo */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.badge-aberto {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.badge-confirmado {
+  color: #15803d;
+  background: #dcfce7;
+}
+
+.badge-cancelado {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.saldo-zerado {
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+/* Alertas */
+.alerta {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: var(--raio);
+  font-weight: 600;
+}
+
+.alerta-sucesso {
+  color: #14532d;
+  background: #dcfce7;
+}
+
+.alerta-erro {
+  color: #7f1d1d;
+  background: #fee2e2;
+}
+
+.rodape {
+  padding: 24px 16px;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--cor-suave);
+}

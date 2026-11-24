@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sistema de Lanchonete</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="topo">
+        <div class="topo-conteudo">
+            <div>
+                <h1>Sistema de Lanchonete</h1>
+                <p class="subtitulo">Gestão de pedidos e estoque</p>
+            </div>
+            <nav aria-label="Seções do sistema">
+                <div class="abas" role="tablist">
+                    <button type="button" class="aba ativa" role="tab" id="aba-inicio"
+                            aria-controls="painel-inicio" aria-selected="true">Início</button>
+                    <button type="button" class="aba" role="tab" id="aba-pedidos"
+                            aria-controls="painel-pedidos" aria-selected="false">Pedidos</button>
+                    <button type="button" class="aba" role="tab" id="aba-clientes"
+                            aria-controls="painel-clientes" aria-selected="false">Clientes</button>
+                    <button type="button" class="aba" role="tab" id="aba-produtos"
+                            aria-controls="painel-produtos" aria-selected="false">Produtos &amp; Estoque</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="conteudo">
+        <p id="alerta" class="alerta" aria-live="polite" hidden></p>
+
+        <!-- Início -->
+        <section id="painel-inicio" class="painel" role="tabpanel" aria-labelledby="aba-inicio">
+            <div class="resumos">
+                <article class="cartao resumo">
+                    <p class="resumo-rotulo">Clientes</p>
+                    <p class="resumo-valor" id="resumo-clientes">0</p>
+                </article>
+                <article class="cartao resumo">
+                    <p class="resumo-rotulo">Produtos</p>
+                    <p class="resumo-valor" id="resumo-produtos">0</p>
+                </article>
+                <article class="cartao resumo">
+                    <p class="resumo-rotulo">Pedidos</p>
+                    <p class="resumo-valor" id="resumo-pedidos">0</p>
+                </article>
+                <article class="cartao resumo">
+                    <p class="resumo-rotulo">Itens em estoque</p>
+                    <p class="resumo-valor" id="resumo-estoque">0</p>
+                </article>
+            </div>
+
+            <article class="cartao">
+                <h2>Últimos pedidos</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Nº</th>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="numero">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ultimos-pedidos"></tbody>
+                </table>
+                <p id="sem-pedidos-inicio" class="vazio">Nenhum pedido ainda. Use a aba Pedidos para criar o primeiro.</p>
+            </article>
+        </section>
+
+        <!-- Pedidos -->
+        <section id="painel-pedidos" class="painel" role="tabpanel" aria-labelledby="aba-pedidos" hidden>
+            <div class="grade">
+                <article class="cartao">
+                    <h2>Novo pedido</h2>
+                    <form id="form-pedido" class="formulario">
+                        <label for="cliente">Cliente</label>
+                        <select id="cliente" required></select>
+                        <button type="submit" class="botao botao-primario">Criar pedido</button>
+                    </form>
+                </article>
+
+                <article class="cartao">
+                    <h2>Adicionar item</h2>
+                    <form id="form-item" class="formulario">
+                        <label for="pedido-aberto">Pedido aberto</label>
+                        <select id="pedido-aberto" required></select>
+
+                        <label for="produto">Produto</label>
+                        <select id="produto" required></select>
+
+                        <label for="quantidade">Quantidade</label>
+                        <input id="quantidade" type="number" min="1" step="1" value="1" required>
+
+                        <button type="submit" class="botao botao-primario">Adicionar item</button>
+                    </form>
+                </article>
+            </div>
+
+            <article class="cartao">
+                <div class="cartao-cabecalho">
+                    <h2 id="titulo-detalhe">Detalhe do pedido</h2>
+                    <div id="acoes-detalhe"></div>
+                </div>
+                <p id="detalhe-vazio" class="vazio">Crie um pedido ou clique em "Ver" na lista abaixo.</p>
+                <table id="tabela-detalhe" hidden>
+                    <thead>
+                        <tr>
+                            <th scope="col">Produto</th>
+                            <th scope="col" class="numero">Qtd.</th>
+                            <th scope="col" class="numero">Preço unit.</th>
+                            <th scope="col" class="numero">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itens-detalhe"></tbody>
+                    <tfoot>
+                        <tr>
+                            <th scope="row" colspan="3">Total</th>
+                            <td id="total-detalhe" class="numero"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </article>
+
+            <article class="cartao">
+                <h2>Todos os pedidos</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Nº</th>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Itens</th>
+                            <th scope="col" class="numero">Total</th>
+                            <th scope="col">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-pedidos"></tbody>
+                </table>
+                <p id="sem-pedidos-lista" class="vazio">Nenhum pedido cadastrado.</p>
+            </article>
+        </section>
+
+        <!-- Clientes -->
+        <section id="painel-clientes" class="painel" role="tabpanel" aria-labelledby="aba-clientes" hidden>
+            <article class="cartao">
+                <h2>Clientes</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Nº</th>
+                            <th scope="col">Nome</th>
+                            <th scope="col">Telefone</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-clientes"></tbody>
+                </table>
+            </article>
+        </section>
+
+        <!-- Produtos & Estoque -->
+        <section id="painel-produtos" class="painel" role="tabpanel" aria-labelledby="aba-produtos" hidden>
+            <article class="cartao">
+                <h2>Produtos &amp; Estoque</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Produto</th>
+                            <th scope="col">Categoria</th>
+                            <th scope="col" class="numero">Preço</th>
+                            <th scope="col" class="numero">Em estoque</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-produtos"></tbody>
+                </table>
+            </article>
+        </section>
+    </main>
+
+    <footer class="rodape">A3 UNISUL - Gestão e Qualidade de Software</footer>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

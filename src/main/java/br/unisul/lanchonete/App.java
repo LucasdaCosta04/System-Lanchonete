@@ -2,6 +2,7 @@ package br.unisul.lanchonete;
 
 import java.io.PrintStream;
 import java.math.BigDecimal;
+import java.util.Arrays;
 
 import br.unisul.lanchonete.model.Cliente;
 import br.unisul.lanchonete.model.ItemPedido;
@@ -15,6 +16,8 @@ import br.unisul.lanchonete.service.EstoqueInsuficienteException;
 import br.unisul.lanchonete.service.EstoqueService;
 import br.unisul.lanchonete.service.PedidoService;
 import br.unisul.lanchonete.service.ProdutoService;
+import br.unisul.lanchonete.web.PedidoApi;
+import br.unisul.lanchonete.web.ServidorWeb;
 
 /**
  * Ponto de entrada do Sistema de Gestão de Lanchonetes.
@@ -24,6 +27,10 @@ import br.unisul.lanchonete.service.ProdutoService;
 public class App {
 
     public static final String TITULO = "Sistema de Lanchonete";
+    static final String ARGUMENTO_WEB = "--web";
+    static final String ARGUMENTO_PORTA = "--porta=";
+    static final int PORTA_PADRAO = 8080;
+    private static final int PORTA_MAXIMA = 65_535;
 
     private final PrintStream saida;
     private final ProdutoService produtoService;
@@ -45,8 +52,76 @@ public class App {
                 estoqueService);
     }
 
+    /**
+     * Sem argumentos: executa o roteiro no console (como no "docker run" do CI).
+     * Com "--web" (e opcionalmente "--porta=NNNN"): abre a interface web local.
+     */
     public static void main(String[] args) {
-        new App(System.out).executar();
+        App app = new App(System.out);
+        if (Arrays.asList(args).contains(ARGUMENTO_WEB)) {
+            ServidorWeb servidor = app.iniciarWeb(lerPorta(args));
+            app.encerrarAoSair(servidor);
+        } else {
+            app.executar();
+        }
+    }
+
+    /**
+     * Lê a porta do argumento "--porta=NNNN"; sem ele, usa a porta padrão 8080.
+     *
+     * @throws IllegalArgumentException se a porta não for um número entre 0 e 65535
+     */
+    static int lerPorta(String[] args) {
+        for (String argumento : args) {
+            if (argumento.startsWith(ARGUMENTO_PORTA)) {
+                return converterPorta(argumento.substring(ARGUMENTO_PORTA.length()));
+            }
+        }
+        return PORTA_PADRAO;
+    }
+
+    private static int converterPorta(String texto) {
+        int porta;
+        try {
+            porta = Integer.parseInt(texto);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(mensagemPortaInvalida(texto), e);
+        }
+        if (porta < 0 || porta > PORTA_MAXIMA) {
+            throw new IllegalArgumentException(mensagemPortaInvalida(texto));
+        }
+        return porta;
+    }
+
+    private static String mensagemPortaInvalida(String texto) {
+        return "Porta inválida: '" + texto + "'. Use um número entre 0 e " + PORTA_MAXIMA + ".";
+    }
+
+    /**
+     * Cadastra o cenário base e sobe a interface web local na porta informada.
+     *
+     * @param porta porta local (0 escolhe uma porta livre, usado nos testes)
+     * @return o servidor iniciado, para que possa ser parado
+     */
+    ServidorWeb iniciarWeb(int porta) {
+        saida.println("=== " + TITULO + " (modo web) ===");
+        cadastrarCenarioBase();
+
+        ServidorWeb servidor = new ServidorWeb(new PedidoApi(pedidoService, clienteService, produtoService), porta);
+        servidor.iniciar();
+
+        saida.println();
+        saida.println("Interface web disponível em " + servidor.getEndereco());
+        saida.println("Pressione Ctrl+C para encerrar.");
+        return servidor;
+    }
+
+    // Ao apertar Ctrl+C, a JVM executa este gancho e o servidor é parado de forma limpa.
+    private void encerrarAoSair(ServidorWeb servidor) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            servidor.parar();
+            saida.println("Servidor web encerrado.");
+        }, "encerrar-servidor-web"));
     }
 
     /**
@@ -57,13 +132,11 @@ public class App {
 
         // Passo 1: cadastro de cliente e produtos.
         titulo("Passo 1: cadastro de cliente e produtos");
-        Cliente cliente = clienteService.cadastrar(new Cliente("Maria Silva", "12345678909", "(48) 99999-0000"));
-        saida.println("Cliente cadastrado: " + cliente.getNome() + " (id " + cliente.getId() + ")");
-
-        Produto lanche = cadastrarProduto("X-Burguer", "Lanche", "18.00", 10);
-        Produto bebida = cadastrarProduto("Refrigerante", "Bebida", "6.00", 5);
-        Produto batata = cadastrarProduto("Batata Frita", "Porção", "9.50", 3);
-        imprimirEstoque("Estoque inicial");
+        CenarioBase base = cadastrarCenarioBase();
+        Cliente cliente = base.cliente();
+        Produto lanche = base.lanche();
+        Produto bebida = base.bebida();
+        Produto batata = base.batata();
 
         // Passo 2: pedido com estoque suficiente, confirmado com baixa automática.
         titulo("Passo 2: Pedido 1 com estoque suficiente");
@@ -104,6 +177,21 @@ public class App {
 
         saida.println();
         saida.println("=== Fim da demonstração ===");
+    }
+
+    // Cliente e produtos usados tanto no roteiro do console quanto na tela web.
+    private record CenarioBase(Cliente cliente, Produto lanche, Produto bebida, Produto batata) {
+    }
+
+    private CenarioBase cadastrarCenarioBase() {
+        Cliente cliente = clienteService.cadastrar(new Cliente("Maria Silva", "12345678909", "(48) 99999-0000"));
+        saida.println("Cliente cadastrado: " + cliente.getNome() + " (id " + cliente.getId() + ")");
+
+        Produto lanche = cadastrarProduto("X-Burguer", "Lanche", "18.00", 10);
+        Produto bebida = cadastrarProduto("Refrigerante", "Bebida", "6.00", 5);
+        Produto batata = cadastrarProduto("Batata Frita", "Porção", "9.50", 3);
+        imprimirEstoque("Estoque inicial");
+        return new CenarioBase(cliente, lanche, bebida, batata);
     }
 
     private Produto cadastrarProduto(String nome, String categoria, String preco, int estoque) {
