@@ -14,7 +14,6 @@ target/
 .env
 
 # Documentação (não usada em tempo de execução)
-CLAUDE.md
 README.md
 LICENSE
 docs/

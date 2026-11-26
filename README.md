@@ -81,7 +81,7 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 
 - Build com Maven e Java 21 (`pom.xml`)
 - Testes unitários com JUnit 5 e Mockito
-- Testes de integração (`ClienteServiceIntegracaoTest`, com `@Tag("integracao")`), usando o repositório em memória real
+- Testes de integração (`ClienteServiceIntegracaoTest`, `PedidoServiceIntegracaoTest` e `ServidorWebIntegracaoTest`, com `@Tag("integracao")`), usando serviços e repositórios em memória reais
 - Relatório de cobertura com JaCoCo, gerado no `mvn verify`
 - Cobertura mínima de 75% de linhas exigida no build (`jacoco:check`)
 - CI no GitHub Actions: compila, testa, gera a cobertura e publica o relatório do JaCoCo
@@ -92,13 +92,14 @@ Lanchonetes de pequeno porte costumam controlar pedidos e estoque de forma manua
 - Módulo Estoque: `EstoqueService` com verificação de saldo (`possuiEstoque`), baixa (`darBaixa`, que lança `EstoqueInsuficienteException`) e reposição (`repor`)
 - Módulo Pedidos completo: enum `StatusPedido`, `ItemPedido` (com cálculo de subtotal), `Pedido` (com cálculo de total, lista imutável de itens e bloqueio de transições inválidas), `PedidoRepositoryEmMemoria` e `PedidoService` (criação, adição de itens, confirmação com baixa de todos os itens sem baixa parcial e cancelamento com reposição)
 - Testes de integração do fluxo de pedidos (`PedidoServiceIntegracaoTest`, com `@Tag("integracao")`), usando os serviços e repositórios em memória reais
-- Execução demonstrativa do fluxo completo em `App.main`: cadastro, pedido confirmado com baixa, pedido recusado sem baixa parcial e cancelamento com reposição
+- Execução demonstrativa do fluxo completo em `App.main`: cadastro, pedido confirmado com baixa, pedido recusado sem baixa parcial e cancelamento com reposição (modo console, padrão)
+- Interface web local opcional (`--web`), para ver clientes, produtos e estoque e para criar, confirmar e cancelar pedidos. Usa o `com.sun.net.httpserver` do próprio JDK, escuta só em `127.0.0.1` e serve os arquivos estáticos a partir de uma lista fixa
 
 **Fora do escopo desta versão (trabalhos futuros)**
 
 - Persistência em banco de dados: o enunciado da A3 a recomenda, mas não a exige. Os repositórios foram definidos como interfaces, o que permite trocar a implementação em memória por um banco sem alterar os serviços.
 - Módulos de Funcionários (login), Pagamento e Relatórios (RF07 a RF09)
-- Interface gráfica, camada `controller/` e protótipo no Figma
+- Protótipo no Figma e acesso à interface pela rede (a interface web desta versão é só local)
 - Documentação em `docs/`: o plano de testes e as evidências estão no relatório da A3
 
 ## 🔄 Fluxo principal e critérios de aceitação
@@ -160,9 +161,9 @@ CONFIRMADO ──cancelar───▶ CANCELADO
 | Cancelar pedido ABERTO não altera o estoque | `naoDeveAlterarEstoqueAoCancelarPedidoAberto` |
 | Cancelar pedido CONFIRMADO devolve os itens ao estoque | `deveDevolverItensAoEstoqueAoCancelarPedidoConfirmado` |
 | Pedido CANCELADO não pode ser cancelado de novo | `deveLancarErroAoCancelarPedidoJaCancelado` |
-| Reposição com quantidade maior que zero aumenta o estoque | `deveReporEstoqueQuandoQuantidadeForPositiva` |
-| Reposição com quantidade zero ou negativa é recusada | `deveRecusarReposicaoComQuantidadeMenorOuIgualAZero` |
-| Reposição de produto inexistente é recusada | `deveRecusarReposicaoDeProdutoInexistente` |
+| Reposição com quantidade maior que zero aumenta o estoque | `deveReporSomandoQuantidadeAoSaldoEChamarSalvar` |
+| Reposição com quantidade zero ou negativa é recusada | `deveReporRejeitarQuantidadeZeroOuNegativaSemChamarSalvarNemAlterarSaldo` |
+| Reposição de produto inexistente é recusada | `deveReporLancarExcecaoQuandoProdutoNaoExistirSemChamarSalvar` |
 
 > Todas as regras acima estão implementadas e validadas por testes unitários e de integração em `EstoqueServiceTest`, `PedidoServiceTest` e `PedidoServiceIntegracaoTest`.
 
@@ -177,11 +178,12 @@ CONFIRMADO ──cancelar───▶ CANCELADO
 | Testes | JUnit Jupiter | 5.11.4 | ✅ Em uso |
 | Testes | Mockito (mockito-junit-jupiter) | 5.14.2 | ✅ Em uso |
 | Cobertura | JaCoCo (relatório de cobertura e verificação mínima de 75% de linhas no build) | 0.8.12 | ✅ Em uso |
-| CI | GitHub Actions (`actions/checkout`, `actions/setup-java` com Temurin 21, `actions/upload-artifact`) | v5 / v5 / v5 | ✅ Em uso |
+| Interface web | `com.sun.net.httpserver` (servidor HTTP nativo do JDK, sem dependências novas) + HTML, CSS e JavaScript estáticos | JDK 21 | ✅ Em uso |
+| CI | GitHub Actions (`actions/checkout`, `actions/setup-java` com Temurin 21, `actions/cache`, `actions/upload-artifact`) | v5 / v5 / v5 / v5 | ✅ Em uso |
 | Contêiner | Docker (multi-stage: `maven:3.9-eclipse-temurin-21` no build e `eclipse-temurin:21-jre` na execução) | — | ✅ Em uso |
 | Persistência | Repositórios em memória | — | ✅ Em uso |
 | Persistência | Banco de dados relacional | — | 🚫 Fora do escopo |
-| Análise estática | SonarCloud | — | ✅ Em uso |
+| Análise estática | SonarCloud (`sonar-maven-plugin`) | 5.8.0.7211 | ✅ Em uso |
 | Prototipação | Figma (protótipo de interface) | — | 🚫 Fora do escopo |
 
 A stack foi definida pela equipe. A persistência em banco de dados ficou fora do escopo desta versão; os dados são mantidos em repositórios em memória.
@@ -199,13 +201,16 @@ A stack foi definida pela equipe. A persistência em banco de dados ficou fora d
 │   │   │   ├── App.java                 # Classe principal
 │   │   │   ├── model/                   # Entidades
 │   │   │   ├── repository/              # Acesso a dados
-│   │   │   └── service/                 # Regras de negócio
+│   │   │   ├── service/                 # Regras de negócio
+│   │   │   └── web/                     # Interface web local: ServidorWeb, ApiHandler, PedidoApi, Json, ArquivoEstaticoHandler
+│   │   └── resources/web/               # Tela da interface web: index.html, app.js, style.css
 │   └── test/
 │       └── java/br/unisul/lanchonete/   # Testes unitários e de integração
 │           ├── AppTest.java
 │           ├── model/
 │           ├── repository/
-│           └── service/
+│           ├── service/
+│           └── web/
 ├── .dockerignore             # Arquivos excluídos do contexto de build da imagem
 ├── .env.example              # Modelo das variáveis de ambiente (reservado para uma futura persistência em banco)
 ├── .gitignore
@@ -257,6 +262,23 @@ A execução (`App.main`) roda uma demonstração completa do fluxo, sem pedir e
 
 > **Windows:** se os acentos aparecerem trocados no terminal, use `java -Dstdout.encoding=UTF-8 -jar target/sistema-lanchonete.jar`.
 
+### Modo web local (opcional)
+
+```bash
+# Interface web na porta padrão 8080
+java -jar target/sistema-lanchonete.jar --web
+
+# Interface web em outra porta (de 0 a 65535)
+java -jar target/sistema-lanchonete.jar --web --porta=9090
+```
+
+Depois de iniciar, acesse `http://127.0.0.1:8080` (ou a porta informada) no navegador. A tela mostra clientes, produtos e estoque e permite criar pedidos, adicionar itens, confirmar e cancelar, com as mesmas regras do modo console. Para encerrar, use `Ctrl+C` no terminal.
+
+- Sem `--web`, a aplicação roda a demonstração no console, que continua sendo o modo padrão.
+- O servidor escuta **somente em `127.0.0.1`** (loopback), então não fica acessível por outras máquinas da rede.
+- Os arquivos da tela são servidos a partir de uma **lista fixa** (`index.html`, `app.js`, `style.css`). O caminho da URL nunca vira caminho de arquivo, o que impede *path traversal*.
+- O modo web é só para execução local. No Docker, o `ENTRYPOINT` roda o modo console e nenhuma porta é exposta.
+
 ### Com Docker (sem instalar Java ou Maven)
 
 **Pré-requisito:** Docker Desktop ou Docker Engine com o plugin Compose.
@@ -303,9 +325,12 @@ mvn test -Dgroups=integracao
 | **Unitários** | Regras de negócio e validações, com JUnit 5 e Mockito |
 | **Integração** | Serviço + repositório em memória real, sem mocks |
 | **Sistema** | Fluxo completo de pedido executado pela `App` (`AppTest`): cadastro, confirmação com baixa, recusa sem baixa parcial e cancelamento com reposição |
-| **Usabilidade** *(fora do escopo)* | Não há interface gráfica nesta versão; a usabilidade é avaliada informalmente na demonstração do fluxo |
+| **Interface web** | Rotas da API, conversão para JSON, entrega dos arquivos estáticos e servidor local de ponta a ponta (`ApiHandlerTest`, `PedidoApiTest`, `JsonTest`, `ArquivoEstaticoHandlerTest`, `ServidorWebIntegracaoTest`) |
+| **Usabilidade** *(fora do escopo)* | Sem testes formais de usabilidade; ela é avaliada informalmente na demonstração do fluxo e na interface web local |
 
-Total atual: **185 métodos de teste** e **215 execuções** (contando os casos dos testes parametrizados).
+Total atual: **247 métodos de teste** (219 `@Test` + 28 `@ParameterizedTest`) e **309 execuções** (contando os casos dos testes parametrizados).
+
+Cobertura atual: **98,33% de linhas** no JaCoCo e **97,3% geral** no SonarCloud.
 
 A cobertura mínima de 75% de linhas já é exigida no build: o `mvn verify` falha se a cobertura ficar abaixo disso.
 
@@ -365,10 +390,12 @@ O workflow `CI` (`.github/workflows/ci.yml`) roda a cada `push` e `pull request`
 
 **Job `build`**
 
-1. **Checkout do código** (`actions/checkout`)
+1. **Checkout do código** (`actions/checkout`, com `fetch-depth: 0` para o SonarCloud ter o histórico completo)
 2. **Configurar Java 21 (Temurin)** (`actions/setup-java`, com cache do Maven)
 3. **Compilar, testar e gerar cobertura**: `mvn -B verify` compila o projeto, roda os testes unitários e de integração, gera o relatório do JaCoCo e verifica a cobertura mínima de 75% de linhas, reprovando o build abaixo disso
-4. **Publicar relatório do JaCoCo**: envia `target/site/jacoco` como artefato `jacoco-report`, mesmo se o build falhar
+4. **Cache do Sonar** (`actions/cache`, em `~/.sonar/cache`)
+5. **Análise SonarCloud**: envia o código e a cobertura e espera o Quality Gate (detalhes abaixo)
+6. **Publicar relatório do JaCoCo**: envia `target/site/jacoco` como artefato `jacoco-report`, mesmo se o build falhar
 
 **Job `docker`** (roda depois do job `build`, só se ele passar)
 
@@ -376,7 +403,7 @@ O workflow `CI` (`.github/workflows/ci.yml`) roda a cada `push` e `pull request`
 2. **Construir imagem Docker**: `docker build -t sistema-lanchonete .`
 3. **Executar contêiner**: `docker run --rm sistema-lanchonete`
 
-**Análise no SonarCloud:** no job `build`, depois dos testes, a etapa **Análise SonarCloud** roda `mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar` com o secret `SONAR_TOKEN`, enviando o código e o relatório de cobertura do JaCoCo para validação do Quality Gate. Com `-Dsonar.qualitygate.wait=true`, a etapa espera o resultado e **falha se o Quality Gate reprovar**. Ela é executada em pull requests e em pushes na `main`, com cache em `~/.sonar/cache` (ver [Análise estática e Quality Gate](#análise-estática-e-quality-gate)).
+**Análise no SonarCloud:** no job `build`, depois dos testes, a etapa **Análise SonarCloud** roda `mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar` com o secret `SONAR_TOKEN`, enviando o código e o relatório de cobertura do JaCoCo para validação do Quality Gate. Com `-Dsonar.qualitygate.wait=true`, a etapa espera o resultado e **falha se o Quality Gate reprovar**. Ela é executada em pull requests e em pushes na `main`, usando o cache do passo anterior (ver [Análise estática e Quality Gate](#análise-estática-e-quality-gate)).
 
 ## ✍️ Convenção de commits
 
@@ -420,7 +447,7 @@ fix(cliente): validar CPF com dígitos repetidos
 **Pull Request**
 
 - Toda mudança entra na `main` por Pull Request.
-- A CI precisa estar verde (testes, cobertura mínima e Docker).
+- A CI precisa estar verde (testes, cobertura mínima, Quality Gate do SonarCloud e Docker). Se o Quality Gate reprovar, a CI falha e o PR fica bloqueado.
 - É necessária pelo menos uma revisão de outro integrante.
 - A descrição referencia a issue: `Refs #N`, ou `Closes #N` quando o PR resolve a issue.
 
@@ -479,6 +506,9 @@ git push origin --delete feat/produto
 | Lucas da Costa | Estorno de baixas parciais quando a confirmação falha no meio das baixas (Issue #22) em [`PedidoService`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/service/PedidoService.java) | [`PedidoServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/PedidoServiceTest.java) e [`PedidoServiceIntegracaoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/PedidoServiceIntegracaoTest.java) |
 | Lucas da Costa | Testes de integração do fluxo de pedidos (serviços + repositórios em memória reais) | [`PedidoServiceIntegracaoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/PedidoServiceIntegracaoTest.java) |
 | Lucas da Costa | Consolidação da execução em [`App`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/App.java): demonstração do fluxo completo de pedidos e estoque | [`AppTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/AppTest.java) |
+| Lucas da Costa | Interface web local: [`ServidorWeb`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/web/ServidorWeb.java) (só `127.0.0.1`), [`ApiHandler`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/web/ApiHandler.java), [`Json`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/web/Json.java), tela em `src/main/resources/web/` e modo `--web` / `--porta` no `App` | [`ApiHandlerTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/web/ApiHandlerTest.java), [`JsonTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/web/JsonTest.java), [`ServidorWebIntegracaoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/web/ServidorWebIntegracaoTest.java) e [`AppTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/AppTest.java) |
+| Lucas da Costa | [`PedidoApi`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/web/PedidoApi.java): rotas de clientes, produtos e pedidos (criar, adicionar item, confirmar e cancelar) | [`PedidoApiTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/web/PedidoApiTest.java) |
+| Lucas da Costa | Correção de *path traversal* em [`ArquivoEstaticoHandler`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/web/ArquivoEstaticoHandler.java): arquivos estáticos servidos só a partir de uma lista fixa | [`ArquivoEstaticoHandlerTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/web/ArquivoEstaticoHandlerTest.java) |
 | Murilo dos Santos Ferreira | Entidade [`Produto`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/model/Produto.java) | [`ProdutoTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/model/ProdutoTest.java) |
 | Murilo dos Santos Ferreira | Interface [`ProdutoRepository`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/repository/ProdutoRepository.java) e [`ProdutoRepositoryEmMemoria`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/repository/ProdutoRepositoryEmMemoria.java) | [`ProdutoRepositoryEmMemoriaTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/repository/ProdutoRepositoryEmMemoriaTest.java) |
 | Murilo dos Santos Ferreira | [`ProdutoService`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/service/ProdutoService.java): cadastro com validações, consulta por id e listagem, com [`ProdutoNaoEncontradoException`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/main/java/br/unisul/lanchonete/service/ProdutoNaoEncontradoException.java) | [`ProdutoServiceTest`](https://github.com/LucasdaCosta04/System-Lanchonete/blob/main/src/test/java/br/unisul/lanchonete/service/ProdutoServiceTest.java) |
@@ -489,7 +519,7 @@ git push origin --delete feat/produto
 | Aluno | Commits de código-fonte | Principais commits |
 |---|---|---|
 | Carlos Henrique Lohn | 20 | [`97ff666`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/97ff66691358fd1dd6735c014b0fcfa4d9aa4c34) entidade Cliente · [`c06a33a`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/c06a33a41d125cbb38c5c1677f2b1d10950bfdb3) validação de CPF · [`f75f94b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f75f94b565a474e58e55ec2e69e82891a5bcb158) repositório em memória · [`e3aaf31`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/e3aaf314eafd422a6c9bf9dd6d4adbb8fb76b664) cadastro com validações · [`11b1414`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/11b14142cdb581c42c16bd38b8992cb94ef3d6f3) bloqueio de CPF duplicado · [`dc7b364`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/dc7b3644668b51f80e6fffd0b183091952c645f1) consultas de cliente · [`26a88de`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/26a88de14e62204404a984a405320539b183dd42) atualização de cliente · [`14a147b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/14a147bf0549cc4f415bb282573de8ca1d06a4ef) exclusão de cliente · [`8bd8d25`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/8bd8d253c3464ccd956e8cfabe51eb30876ac017) integração: cadastro e consulta · [`392edcd`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/392edcd0cbc915357bc9a3e4da052877adf449e3) integração: atualização e exclusão · [`3681901`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/368190102affde81d689b725c4f1f31b6067c5de) integração: ciclo completo |
-| Lucas da Costa | 16 | [`10eb6c0`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/10eb6c0c0ae625fb9d2948029102e0fa45d4153e) enum StatusPedido · [`6886668`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/68866680d42c62e04c33972d2628400784479cda) ItemPedido e subtotal · [`d249272`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/d249272f4e1f9b7271ddf04429555da2832cf1a6) Pedido e cálculo do total · [`f7b4b2f`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f7b4b2f7541920c37953de5cc66f8e4a7c0d3f0d) PedidoRepository em memória · [`a890e28`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/a890e28d75ad3d5417292e670ed99921ab815f62) correção apontada pelo SonarCloud · [`8cef0bf`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/8cef0bfc7f0839ff1ce2ab8632184f8ecd26ba1a) bloqueio de transições inválidas · [`73ec46f`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/73ec46fab06e5eaf7c8139b6752889ed8dc21eb3) PedidoService · [`75fc190`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/75fc19030967b2e047f080b73a6a114b61b27f28) testes unitários do PedidoService · [`eea6958`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/eea69585328476ebee8186e140465178b447149b) testes de integração do fluxo de pedidos · [`b03482b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/b03482b359badcb5d68517027a5162885d53abbc) fluxo demonstrativo no App.main · [`137c050`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/137c050d11da2eeefd6f5c1158055dafc845ec19) estorno de baixas parciais na confirmação · [`87fe1d8`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/87fe1d82f61443b6787c34416161f723d6520c3a) testes do estorno de baixa parcial |
+| Lucas da Costa | 19 | [`10eb6c0`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/10eb6c0c0ae625fb9d2948029102e0fa45d4153e) enum StatusPedido · [`6886668`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/68866680d42c62e04c33972d2628400784479cda) ItemPedido e subtotal · [`d249272`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/d249272f4e1f9b7271ddf04429555da2832cf1a6) Pedido e cálculo do total · [`f7b4b2f`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/f7b4b2f7541920c37953de5cc66f8e4a7c0d3f0d) PedidoRepository em memória · [`a890e28`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/a890e28d75ad3d5417292e670ed99921ab815f62) correção apontada pelo SonarCloud · [`8cef0bf`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/8cef0bfc7f0839ff1ce2ab8632184f8ecd26ba1a) bloqueio de transições inválidas · [`73ec46f`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/73ec46fab06e5eaf7c8139b6752889ed8dc21eb3) PedidoService · [`75fc190`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/75fc19030967b2e047f080b73a6a114b61b27f28) testes unitários do PedidoService · [`eea6958`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/eea69585328476ebee8186e140465178b447149b) testes de integração do fluxo de pedidos · [`b03482b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/b03482b359badcb5d68517027a5162885d53abbc) fluxo demonstrativo no App.main · [`137c050`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/137c050d11da2eeefd6f5c1158055dafc845ec19) estorno de baixas parciais na confirmação · [`87fe1d8`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/87fe1d82f61443b6787c34416161f723d6520c3a) testes do estorno de baixa parcial · [`a415d4b`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/a415d4beaabfc0e4e919d34e651bd70a2ce9699f) interface web local · [`0081804`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/0081804a38e8a592ecd64e558fc629ba2cba7461) correção de path traversal · [`1fc6ada`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/1fc6adae8b586a58116b5a9e893f1929e715cdd2) testes do ArquivoEstaticoHandler |
 | Murilo dos Santos Ferreira | 14 | [`95fb48e`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/95fb48e43ef85e5e65fd56ac7d350eae78aebc67) entidade Produto · [`0d29a26`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/0d29a26383c05bb61e0df3b10e767de141312937) interface ProdutoRepository · [`881adb7`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/881adb7c4baa9826673e1f68add57ca670472706) repositório de produtos em memória · [`295ea70`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/295ea7017b93f4ecdba28f367c72443c28546b60) cadastro de produto com validações · [`1fdea1e`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/1fdea1ef0d8b981af5e2113d13663344cae94db0) consultas de produto · [`397bf08`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/397bf08743a81240a409df3a5e395b7a0cbde88a) EstoqueInsuficienteException · [`1aced49`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/1aced49627af460cdef6b30836bf3168fa04bb8d) verificação e baixa de estoque · [`af6021c`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/af6021cb9f40ccaf0af2e33afc5981d230e02fd5) reposição de estoque · [`bd019f8`](https://github.com/LucasdaCosta04/System-Lanchonete/commit/bd019f82419d84d2d6c08ed75897f26f6fc4b747) testes de reposição de estoque |
 
 > As tabelas são atualizadas a cada entrega. Só são considerados commits que alteram código-fonte (`src/`) na branch `main`.
